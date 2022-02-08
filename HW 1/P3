@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Feb  5 18:27:51 2022
+
+@author: pulkit
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+import csv
+import pandas as pd
+
+
+filename = 'ENPM673_hw1_linear_regression_dataset - Sheet1.csv'
+
+# ages = []
+# charges = []
+
+# with open(filename, 'r') as csvfile:
+#     reader = csv.reader(csvfile)
+#     for row in reader:
+#         ages.append(row[0])
+#         charges.append(row[6])
+        
+df = pd.read_csv(filename)
+data = df[['age','charges']].to_numpy()
+
+def Covariance(x):
+    A = x - x.mean(axis=0)
+    S = np.dot(A.T, A)/len(x)
+    eig, eigv = np.linalg.eig(S)
+    
+    return S, eig, eigv
+
+cov, eig, eigv = Covariance(data)
+cov_corr = np.cov(data)
