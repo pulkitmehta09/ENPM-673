@@ -8,7 +8,27 @@ Created on Fri Feb  4 14:07:07 2022
 
 import numpy as np
 
-def compute_SVD(A):
+def ComputeSVD(A):
+    """
+    This function calculates the Singular Value Decomposition(SVD) of a given matrix.
+
+    Parameters
+    ----------
+    A : 2-D Array
+        Matrix for which SVD is to be computed.
+        
+    Returns
+    -------       
+    U_eigvs : Array
+        Eigenvectors of matrix U.
+    sigma : Array
+        Sigma Matrix.
+    H : Array
+        Homography matrix.
+    V_t : Array
+        Eigenvectors of matrix V.
+
+    """
     A_t = A.T
     AA_t = A.dot(A_t)
     
@@ -39,12 +59,14 @@ def compute_SVD(A):
 
 
 
-
+# ---------------------------------------------------------------------------------
+# GIVEN DATA
+# ---------------------------------------------------------------------------------
 
 x = np.array([5,150,150,5])
 y = np.array([5,5,150,150])
-xp = np.array([150,150,220,80])
-yp = np.array([5,150,100,200])
+xp = np.array([100,200,220,100])
+yp = np.array([100,80,80,200])
     
 
 A = np.array([[-x[0],-y[0],-1,0,0,0,x[0]*xp[0],y[0]*xp[0],xp[0]],
@@ -56,4 +78,10 @@ A = np.array([[-x[0],-y[0],-1,0,0,0,x[0]*xp[0],y[0]*xp[0],xp[0]],
               [-x[3],-y[3],-1,0,0,0,x[3]*xp[3],y[3]*xp[3],xp[3]],
               [0,0,0,-x[3],-y[3],-1,x[3]*yp[3],y[3]*yp[3],yp[3]]])
 
-U, S, H, V_t = compute_SVD(A)
+# ---------------------------------------------------------------------------------
+# OUTPUT
+# ---------------------------------------------------------------------------------
+
+U, S, H, V_t = ComputeSVD(A)
+
+print("Homography matrix: \n", H)

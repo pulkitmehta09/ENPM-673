@@ -1,96 +1,133 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb  2 09:04:53 2022
+# Homework 1 Problem 2
+# ENPM673 Spring 2022
+# Section 0101
 
-@author: pulkit
+@author: Pulkit Mehta
+UID: 117551693
+
 """
 
-# import the necessary packages
-from collections import deque
-from imutils.video import VideoStream
-import numpy as np
-import argparse
 import cv2
+import numpy as np
+import matplotlib.pyplot as plt
 import imutils
-import time
-import pandas as pd
+from IPython import get_ipython
 
-# construct the argument parse and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video",
-	help="path to the (optional) video file")
-ap.add_argument("-b", "--buffer", type=int, default=64,
-	help="max buffer size")
-args = vars(ap.parse_args())
+get_ipython().run_line_magic('matplotlib','qt')
 
 
-redLower = (80, 25 , 10)
-redUpper = (255 , 60, 255)
-pts = deque(maxlen=args["buffer"])
-# if a video path was not supplied, grab the reference
-# to the webcam
-if not args.get("video", False):
-	vs = VideoStream(src=0).start()
-# otherwise, grab a reference to the video file
-else:
-	vs = cv2.VideoCapture(args["video"])
-# allow the camera or video file to warm up
-time.sleep(2.0)
+def Retrievecenter(videofile):
+    """
+    This function detects coordinates of the center of the ball.
 
-redLower = (100,170,80)
-redUpper = (190,255,255)
+    Parameters
+    ----------
+    videofile : video file
+        Input video file.
 
-Data_Features = ['x','y','time']
-Data_Points = pd.DataFrame(data = None, columns = Data_Features, dtype = float)
+    Returns
+    -------
+    coor : Array
+        Stored center coordinates of the detected ball every frame.
 
-start = time.time()
-
-# if not args.get("video", False):
-# 	camera = cv2.VideoCapture(0)
-
-# # otherwise, grab a reference to the video file
-# else:
-# 	camera = cv2.VideoCapture(args["video"])
-
-
-
-while(True):
-    ret, frame = vs.read()
-    if args.get("video") and not ret:
-        break
-    current_time = time.time() - start
+    """
     
-    frame = imutils.resize(frame, width=1200)
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, redLower, redUpper)
-    red = cv2.bitwise_and(frame, frame, mask = mask) 
     
-    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
-    center = None
+    cam = cv2.VideoCapture(videofile)
     
-    if len(cnts) > 0:
-        c = max(cnts, key = cv2.contourArea)
-        ((x,y),radius) = cv2.minEnclosingCircle(c)
-        M = cv2.moments(c)
-        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-		
-        if (radius < 300) & (radius > 10 ) : 
-            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
-            cv2.circle(frame, center, 5, (0,0,255), -1)
-            Data_Points.loc[Data_Points.size/3] = [x, y, current_time]
-    pts.appendleft(center)
+    coor = np.empty((0,2),int)  
     
-    for i in range(1, len(pts)):
-        if pts[i-1] is None or pts[i] is None:
-            continue
-        thickness = int(np.sqrt(args["buffer"] / float(i+1)) * 2.5)
-        cv2.line(frame, pts[i-1], pts[i], (255,0,0), thickness)
+    redLower1 = np.array([0,50,50])
+    redUpper1 = np.array([10,255,255])
+    
+    redLower2 = np.array([170,50,50])
+    redUpper2 = np.array([180,255,255])
 
-    time.sleep(0.05)
-    cv2.imshow('frame', red)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
     
-vs.release()
-cv2.destroyAllWindows()
+    while(True): 
+        ret, frame = cam.read()
+        
+        if not ret:
+            break
+        
+        frame = imutils.resize(frame, width=1200)
+        frame = cv2.flip(frame,0)
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask1 = cv2.inRange(hsv, redLower1, redUpper1)
+        mask2 = cv2.inRange(hsv, redLower2, redUpper2)
+        mask = mask1 + mask2
+        red = cv2.bitwise_and(frame, frame, mask = mask)
+        M = cv2.moments(mask)
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        coor = np.append(coor, [[cX,cY]], axis=0)
+        # cv2.imshow('ball',red)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    
+    cam.release()
+    cv2.destroyAllWindows()
+    return coor
+
+def StandardLeastSquares(coor):
+    """
+    This function calculates a parabolic curve fit using Standard Least Squares method. 
+    
+    Parameters
+    ----------
+    coor : Array
+        Input array with x and y coordinates.
+
+    Returns
+    -------
+    res : Array
+        Standard Least Squares fit result.
+
+    """
+    
+    x = coor[:,0]
+    y = coor[:,1]
+    x_sq = np.power(x,2)
+    A = np.stack((x_sq, x, np.ones((len(x)), dtype=int )), axis=1)
+    A_t = A.transpose()
+    A_tA = A_t.dot(A)
+    A_tY = A_t.dot(y)
+    x_bar = (np.linalg.inv(A_tA)).dot(A_tY)
+    res = A.dot(x_bar)
+    
+    return res
+
+video1 = 'ball_video1.mp4'
+video2 = 'ball_video2.mp4'
+
+c1 = Retrievecenter(video1)
+c2 = Retrievecenter(video2)
+
+
+y1 = StandardLeastSquares(c1)
+y2 = StandardLeastSquares(c2)
+
+fig = plt.figure()
+
+plt.subplot(121)
+plt.title('Video 1')
+plt.xlabel('time')
+plt.ylabel('position')
+plt.plot(c1[:,0], c1[:,1],'bo', label = 'Detected ball center')
+plt.plot(c1[:,0],y1, c='red', label = 'Least Squares')
+plt.legend()
+
+plt.subplot(122)
+plt.title('Video 2')
+plt.xlabel('time')
+plt.ylabel('position')
+plt.plot(c2[:,0], c2[:,1],'bo', label = 'Detected ball center')
+plt.plot(c2[:,0],y2, c='red', label = 'Least Squares')
+
+plt.legend()
+
+
+plt.show()
