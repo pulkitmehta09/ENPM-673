@@ -97,7 +97,7 @@ def TotalLeastSquares(data):
     
     UTU = np.dot(U.transpose(), U)
     B = np.dot(UTU.transpose(),UTU)                                                                  
-    eig, eigv = np.linalg.eig(B)                                                                     # Finding eigenvalues and eigenvectors                                                                    
+    eig, eigv = np.linalg.eig(UTU)                                                                     # Finding eigenvalues and eigenvectors                                                                    
     i = np.argmin(eig)
     a, b = eigv[:, i]                                                                                # Model parameters corresponding to the smallest eigenvalue                       
     d = a * data[:,0].mean(axis=0) + b                                                               # d = a*x_mean + b
@@ -156,7 +156,7 @@ def RANSAC(data):
     sample_count = 0                                                              # Sample count                      
     p = 0.95                                                                      # Probability for inlier
     optimum = None                                                                # Best fit to be calculated
-    threshold = np.std(y_val)/5                                                   # Distance threshold
+    threshold = np.std(y_val)/3                                                   # Distance threshold
     max_inliers = 0                                                               # Maximum number of inliers  
     
     A = np.stack((data[:,0], np.ones((len(data[:,0])), dtype = int)), axis = 1)
@@ -220,8 +220,8 @@ plt.title('Eigenvectors')
 plt.xlabel('Age')
 plt.ylabel('Cost')
 plt.plot(data[:,0], data[:,1], 'co', label = 'Data')
-plt.quiver(*origin, *eigvec1, color=['r'], scale=21, label = 'Eigenvector 1')
-plt.quiver(*origin, *eigvec2, color=['g'], scale=21, label = 'Eigenvector 2')
+plt.quiver(*origin, *eigvec1, color=['r'], scale=10, label = 'Eigenvector 1')
+plt.quiver(*origin, *eigvec2, color=['g'], scale=10, label = 'Eigenvector 2')
 plt.legend()
 
 # ---------------------------------------------------------------------------------

@@ -31,13 +31,13 @@ def ComputeSVD(A):
     Returns
     -------       
     U_eigvs : Array
-        Eigenvectors of matrix U.
+        U Matrix.
     sigma : Array
         Sigma Matrix.
     H : Array
         Homography matrix.
     V_t : Array
-        Eigenvectors of matrix V.
+        V-transpose matrix.
 
     """
     A_t = A.T
@@ -62,7 +62,7 @@ def ComputeSVD(A):
     
     # Contructing Sigma matrix
     temp = np.array(np.diag((np.sqrt(U_eigs))))
-    sigma = np.zeros_like(A)
+    sigma = np.zeros_like(A).astype(np.float64)
     sigma[:temp.shape[0],:temp.shape[1]] = temp
     
     # Homography matrix
