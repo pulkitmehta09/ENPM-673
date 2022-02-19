@@ -19,7 +19,7 @@ Filename: pmehta09_hw1_P2.py
 Required Packages: cv2, numpy, matplotlib 
 
 Save the video files: ball_video1.mp4 and ball_video2.mp4 
-in the same folder as this file or give path to the videos in lines 115 and 116.
+in the same folder as this file or give path to the videos in lines 110 and 111.
 
 
 ---------------------------------------------------------------------------------
