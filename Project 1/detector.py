@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 img = cv2.imread('testudo.png')
-# img = cv2.resize(img, (100,100), interpolation= cv2.INTER_LINEAR)
+img = cv2.resize(img, (200,200), interpolation= cv2.INTER_LINEAR)
 # T = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 # tr = np.convolve(T,img)
 cv2.imshow('image',img)

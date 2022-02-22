@@ -6,23 +6,34 @@ Created on Thu Feb 17 16:43:16 2022
 @author: pulkit
 """
 
+# TODO argument parser and option to choose from argument or default
+
 import cv2
 import numpy as np
 from functions import *
 import imutils
-
+from matplotlib import pyplot as plt
 
 videofile = '1tagvideo.mp4'
 cam = cv2.VideoCapture(videofile)
 
-
+testudo = cv2.imread('testudo.png')
+testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
     
-coor = np.empty((0,8),int)
-i = 0
-gotID = False
+
+gotID = False       # Flag to check ID found or not
+
+I = (200,200)       # Tag dimensions
+
+# Corner matrix -------------------------------
+C = np.array([0,0,200,0,200,200,0,200])
+C = C.reshape(4,1,2)
+# ---------------------------------------------
+
 
 while(True): 
     ret, frame = cam.read()
+    
     # Check if the frame exists, if not exit 
     if not ret:
         break
@@ -41,10 +52,9 @@ while(True):
             # PolyDP
             peri = cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour,0.1 * peri,True)
-            a = approx.reshape(1,8)
-            coor = np.append(coor, a, axis=0)
             cv2.drawContours(frame,[approx],-1,(0,255,0),3) 
             # -------------------------------------
+    
     # ----------------------------------------------------------------
 
     # # ----------------------------------------------------------------
@@ -63,43 +73,66 @@ while(True):
     # frame[dst > 0.51 * dst.max()] = [0,0,255]
     
     # # ----------------------------------------------------------------
+   
     
-    H = homography(approx)
-    warped = warpPerspective(H, frame, 200, 200)
-    # rotated = cv2.rotate(warped, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    # rotated = RotateTag(warped, 90)
-    rotated = imutils.rotate(warped, 270)
-    center_tag = rotated[75:125,75:125]
-    # center_tag = cv2.cvtColor(center_tag, cv2.COLOR_BGR2GRAY)
-    # ret, t_center_tag = cv2.threshold(center_tag, 200, 255, cv2.THRESH_BINARY)
-    i += 1
-    orgTL = (12,12)
-    orgTR = (37,12)
-    orgBL = (12,37)
-    orgBR = (37,37)
+    # # ----------------------------------------------------------------
+    # TODO strighten tag without hardcoding
     
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = 0.1
-    color = (0,0,255)
-    thickness = 1
+    # tag = warped[50:150,50:150]
+    # tag_TL = tag[0:25,0:25]
+    # tag_BL = tag[75:100,0:25]
+    # tag_BR = tag[75:100,75:100]
+    # tag_TR = tag[0:25,75:100]
+    
+    # # ----------------------------------------------------------------
+    
+    # # ----------------------------------------------------------------
+    # Drawing on tags
+
+    # font = cv2.FONT_HERSHEY_SIMPLEX
+    # fontScale = 0.1
+    # color = (0,0,255)
+    # thickness = 1
 
     # center_tag = cv2.putText(center_tag, 'TL', orgTL, font, fontScale, color, thickness)
     # center_tag = cv2.putText(center_tag, 'TR', orgTR, font, fontScale, color, thickness)
     # center_tag = cv2.putText(center_tag, 'BL', orgBL, font, fontScale, color, thickness)
     # center_tag = cv2.putText(center_tag, 'BR', orgBR, font, fontScale, color, thickness)
+    
+    # # ----------------------------------------------------------------
+    
+    
+    
+    H = homography(approx, I)
+    warped = warpPerspective(H, frame, I)
+    # rotated = cv2.rotate(warped, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    # rotated = RotateTag(warped, 90)
+    rotated = imutils.rotate(warped, 90)        # Full Tag rotated image
+    center_tag = rotated[75:125,75:125]         # 2x2 grid  of tag
+       
     if not gotID:
-        gotID, ID = getTagID(center_tag)
+        gotID, ID, ar = getTagID(center_tag)
+ 
+    P, T = getProjectionMatrix(H) 
+ 
+    # H_testudo = homography(C, I)
+    # warped_testudo = warpTestudo(H_testudo, testudo, I[0], I[1], frame)
     
-    tag = warped[50:150,50:150]
-    tag_TL = tag[0:25,0:25]
-    tag_BL = tag[75:100,0:25]
-    tag_BR = tag[75:100,75:100]
-    tag_TR = tag[0:25,75:100]
     
-    cv2.imshow('frame', center_tag)
+    cv2.imshow('frame', rotated)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
 
 cam.release()
 cv2.destroyAllWindows()
 print("Tag ID: ", ID)
+print(ar)
+# NOT Required ----------------------------------------------
+# x = res[:,0,0]
+# y = res[:,1,0]
+# z = res[:,2,0]
+# fig = plt.figure()
+# ax = fig.add_subplot(projection = '3d')
+# ax.scatter(x,y,z)
+# plt.show()
