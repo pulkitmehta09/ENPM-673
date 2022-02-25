@@ -5,7 +5,7 @@ Created on Thu Feb 17 16:43:16 2022
 
 @author: pulkit
 """
-
+# Original Working verion 
 # TODO argument parser and option to choose from argument or default
 
 import cv2
@@ -22,14 +22,15 @@ testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
     
 
 gotID = False       # Flag to check ID found or not
+got_fft = False
 
 I = (200,200)       # Tag dimensions
 
 # Corner matrix -------------------------------
 C = np.array([0,0,200,0,200,200,0,200])
-C = C.reshape(4,1,2)
+# C = C.reshape(4,1,2)
 # ---------------------------------------------
-
+count = 0
 
 while(True): 
     ret, frame = cam.read()
@@ -44,8 +45,7 @@ while(True):
     # ----------------------------------------------------------------
     # Contour
     contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    
-    
+   
     for contour in contours:
         if (20000 < cv2.contourArea(contour) < 100000):
             # -------------------------------------
@@ -100,29 +100,33 @@ while(True):
     # center_tag = cv2.putText(center_tag, 'BR', orgBR, font, fontScale, color, thickness)
     
     # # ----------------------------------------------------------------
-    
-    
-    
-    H = homography(approx, I)
+     
+    corners = orderpts(approx)
+    H = homography(corners, C)
     warped = warpPerspective(H, frame, I)
     # rotated = cv2.rotate(warped, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # rotated = RotateTag(warped, 90)
     rotated = imutils.rotate(warped, 90)        # Full Tag rotated image
-    center_tag = rotated[75:125,75:125]         # 2x2 grid  of tag
+    center_tag = rotated[75:125,75:125]         # 2x2 grid of tag
        
     if not gotID:
         gotID, ID, ar = getTagID(center_tag)
  
     P, T = getProjectionMatrix(H) 
  
-    # H_testudo = homography(C, I)
-    # warped_testudo = warpTestudo(H_testudo, testudo, I[0], I[1], frame)
+    # H_testudo = homography(corners, C)
+    warped_testudo = warpPerspective(H_testudo, testudo, I)
     
-    
-    cv2.imshow('frame', rotated)
+    # -----------------------------------------------------------------
+    # Fourier 
+    # if(count == 17)  :
+    #     fft(grayscale, frame)
+    #     got_fft = True
+    # ---------------------------------------------------------------    
+    cv2.imshow('frame', center_tag)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
+    count+=1
 
 cam.release()
 cv2.destroyAllWindows()
