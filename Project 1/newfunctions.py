@@ -130,6 +130,16 @@ def warpPerspective(H,img,dim):
     return warped
 
 
+def warpTestudo(H,dim,frame,testudo):
+    H_inv = np.linalg.inv(H)
+    for a in range(dim[1]):
+        for b in range(dim[0]):
+            x, y, z = np.dot(H_inv,[a,b,1])
+            frame[int(y/z)][int(x/z)] = testudo[a][b] 
+            
+    return frame
+
+
 
 # Not required
 def RotateTag(warped, angle):
@@ -177,17 +187,17 @@ def getProjectionMatrix(H):
     else:
         B = -B_tilda
     
-    r1 = scale * B[:,0]
-    r2 = scale * B[:,1]
+    r1 = B[:,0]
+    r2 = B[:,1]
     r3 = np.cross(r1, r2)
-    t = scale * B[:,2]
+    t = B[:,2]
     T = np.column_stack((r1, r2, r3, t))
     P = np.matmul(K, T)
     
     return P, T
 
 
-def drawCube(P):
+def drawCube(P,frame):
     s = 200
     corners = np.array([[0,0,0,1],[s,0,0,1],[s,s,0,1],[0,s,0,1],[0,0,-s,1],[s,0,-s,1],[s,s,-s,1],[0,s,-s,1]])
     corners = corners.reshape(8,4,1)
@@ -195,16 +205,20 @@ def drawCube(P):
     for i in range(8): 
         res[i] = np.matmul(P,corners[i])
         res[i] = res[i] / res[i][2]
-        
+     
+    cv2.line(frame,(res[0][0],res[0][1]),(res[1][0],res[1][1]),(255,0,0),2)
+    cv2.line(frame,(res[0][0],res[0][1]),(res[3][0],res[3][1]),(255,0,0),2)
+    cv2.line(frame,(res[1][0],res[1][1]),(res[2][0],res[2][1]),(255,0,0),2)
+    cv2.line(frame,(res[2][0],res[2][1]),(res[3][0],res[3][1]),(255,0,0),2)
     
-    return res
-
-
-
-
-
-
-
-
-
+    cv2.line(frame,(res[4][0],res[4][1]),(res[5][0],res[5][1]),(0,0,255),2)
+    cv2.line(frame,(res[4][0],res[4][1]),(res[7][0],res[7][1]),(0,0,255),2)
+    cv2.line(frame,(res[5][0],res[5][1]),(res[6][0],res[6][1]),(0,0,255),2)
+    cv2.line(frame,(res[6][0],res[6][1]),(res[7][0],res[7][1]),(0,0,255),2)
+    
+    cv2.line(frame,(res[0][0],res[0][1]),(res[4][0],res[4][1]),(255,0,0),2)
+    cv2.line(frame,(res[1][0],res[1][1]),(res[5][0],res[5][1]),(255,0,0),2)
+    cv2.line(frame,(res[2][0],res[2][1]),(res[6][0],res[6][1]),(255,0,0),2)
+    cv2.line(frame,(res[3][0],res[3][1]),(res[7][0],res[7][1]),(255,0,0),2)
+    
 

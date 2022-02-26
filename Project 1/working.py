@@ -19,7 +19,7 @@ cam = cv2.VideoCapture(videofile)
 
 testudo = cv2.imread('testudo.png')
 testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
-    
+testudo = imutils.rotate(testudo, 90)   
 
 gotID = False       # Flag to check ID found or not
 got_fft = False
@@ -74,8 +74,8 @@ while(True):
     #     for b in range(warped.shape[0]):
     #         x, y, z = np.dot(H_testudo_inv,[a,b,1])
     #         frame[int(y/z)][int(x/z)] = testudo[a][b]
-    # # ----------------------------------------------------------------
-    
+    # ----------------------------------------------------------------
+    frame = warpTestudo(H_testudo, I, frame, testudo)
     
     
     
@@ -85,25 +85,11 @@ while(True):
     #     fft(grayscale, frame)
     #     got_fft = True
     # ---------------------------------------------------------------   
+    H_cube = homography(corners, C)
     
     P, T = getProjectionMatrix(H) 
-    res = drawCube(P)
-    cv2.line(frame,(res[0][0],res[0][1]),(res[1][0],res[1][1]),(0,0,255),2)
-    cv2.line(frame,(res[0][0],res[0][1]),(res[3][0],res[3][1]),(0,0,255),2)
-    cv2.line(frame,(res[1][0],res[1][1]),(res[2][0],res[2][1]),(0,0,255),2)
-    cv2.line(frame,(res[2][0],res[2][1]),(res[3][0],res[3][1]),(0,0,255),2)
-    
-    cv2.line(frame,(res[4][0],res[4][1]),(res[5][0],res[5][1]),(255,0,0),2)
-    cv2.line(frame,(res[4][0],res[4][1]),(res[7][0],res[7][1]),(255,0,0),2)
-    cv2.line(frame,(res[5][0],res[5][1]),(res[6][0],res[6][1]),(255,0,0),2)
-    cv2.line(frame,(res[6][0],res[6][1]),(res[7][0],res[7][1]),(255,0,0),2)
-    
-    cv2.line(frame,(res[0][0],res[0][1]),(res[4][0],res[4][1]),(255,0,0),2)
-    cv2.line(frame,(res[1][0],res[1][1]),(res[5][0],res[5][1]),(0,0,255),2)
-    cv2.line(frame,(res[2][0],res[2][1]),(res[6][0],res[6][1]),(0,0,255),2)
-    cv2.line(frame,(res[3][0],res[3][1]),(res[7][0],res[7][1]),(0,0,255),2)
-    
-    
+    drawCube(P,frame)
+        
     
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
