@@ -45,6 +45,43 @@ def fft(grayscale, frame):
     plt.savefig('fft')
     plt.show()
 
+    # Numpy-----------------------------------------
+    # img_float32 = np.float32(grayscale)   
+    # dft = cv2.dft(img_float32, flags = cv2.DFT_COMPLEX_OUTPUT)
+    # dft_shift = np.fft.fftshift(dft)
+    # magnitude_spectrum = 20 * np.log(cv2.magnitude(dft_shift[:, :, 0], dft_shift[:, :, 1]))
+    # rows, cols = grayscale.shape
+    # crow, ccol = int(rows/2), int(cols/2)
+    
+    # mask = np.zeros((rows, cols, 2), np.uint8)
+    # r = 80
+    # center = [crow, ccol]
+    # x, y = np.ogrid[:rows, :cols]
+    # mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    # mask[mask_area] = 0
+    # fshift = dft_shift * mask
+    # f_ishift = np.fft.ifftshift(fshift)
+    # img_back = cv2.idft(f_ishift)
+    # img_back = cv2.magnitude(img_back[:, :, 0], img_back[:, :, 1])
+    # fig = plt.figure(figsize=(12, 12))
+    # ax1 = fig.add_subplot(2,2,1)
+    # ax1.imshow(img, cmap='gray')
+    # ax1.title.set_text('Input Image')
+    # ax2 = fig.add_subplot(2,2,2)
+    # ax2.imshow(magnitude_spectrum, cmap='gray')
+    # ax2.title.set_text('FFT of image')
+    # ax3 = fig.add_subplot(2,2,3)
+    # ax3.imshow(fshift, cmap='gray')
+    # ax3.title.set_text('FFT + Mask')
+    # ax4 = fig.add_subplot(2,2,4)
+    # ax4.imshow(img_back, cmap='gray')
+    # ax4.title.set_text('After inverse FFT')
+       
+    # plt.show()
+    # -----------------------------------------------------
+    
+
+
 
 def orderpts(pts):
     pts = pts.reshape(4,2)
@@ -75,6 +112,8 @@ def orderpts(pts):
 def homography(I,C):
     C = C.reshape(4,2)
     I = I.reshape(4,2)
+    # x_c = np.array([0, I[0], I[0], 0])
+    # y_c = np.array([0, 0, I[1], I[1]])
     
     x_c = np.array([I[0][0], I[1][0], I[2][0], I[3][0]])
     y_c = np.array([I[0][1], I[1][1], I[2][1], I[3][1]])
@@ -128,16 +167,17 @@ def warpPerspective(H,img,dim):
     return warped
 
 
-def warpTestudo(H,dim,frame,testudo):
-    H_inv = np.linalg.inv(H)
-    for a in range(dim[1]):
-        for b in range(dim[0]):
-            x, y, z = np.dot(H_inv,[a,b,1])
-            frame[int(y/z)][int(x/z)] = testudo[a][b] 
-            
-    return frame
 
-
+def warpTestudo(H,img,maxHeight,maxWidth,superimg):
+    H_inv=np.linalg.inv(H)
+    warped = cv2.transpose(superimg)
+    for a in range(maxHeight):
+        for b in range(maxWidth):
+            f = [a,b,1]
+            f = np.reshape(f,(3,1))
+            x, y, z = np.matmul(H_inv,f)
+            warped[a][b] = img[int(y/z)][int(x/z)]
+    return warped
 
 # Not required
 def RotateTag(warped, angle):
@@ -170,6 +210,23 @@ def getTagID(image):
     if ID != -1:
         status = True
    
+   # ---------------------------
+   # OLD Method
+   # index = np.argmin(ar)
+   #  if index == 0:
+   #      ID = 14
+   #      status = True
+   #  if index == 1:
+   #      ID = 13
+   #      status = True
+   #  if index == 2:
+   #      ID = 11
+   #      status = True
+   #  if index == 3:
+   #      ID = 7
+   #      status = True
+   # -------------------------
+   
     return status, ID, ar
 
 
@@ -185,38 +242,24 @@ def getProjectionMatrix(H):
     else:
         B = -B_tilda
     
-    r1 = B[:,0]
-    r2 = B[:,1]
+    r1 = scale * B[:,0]
+    r2 = scale * B[:,1]
     r3 = np.cross(r1, r2)
-    t = B[:,2]
+    t = scale * B[:,2]
     T = np.column_stack((r1, r2, r3, t))
     P = np.matmul(K, T)
     
     return P, T
 
 
-def drawCube(P,frame):
+def drawCube(P):
     s = 200
-    corners = np.array([[0,0,0,1],[s,0,0,1],[s,s,0,1],[0,s,0,1],[0,0,-s,1],[s,0,-s,1],[s,s,-s,1],[0,s,-s,1]])
+    corners = np.array([[0,0,0,1],[s,0,0,1],[s,s,0,1],[0,s,0,1],[0,0,s,1],[s,0,s,1],[s,s,s,1],[0,s,s,1]])
     corners = corners.reshape(8,4,1)
     res = np.empty((8,3,1))
     for i in range(8): 
         res[i] = np.matmul(P,corners[i])
-        res[i] = res[i] / res[i][2]
-     
-    cv2.line(frame,(res[0][0],res[0][1]),(res[1][0],res[1][1]),(255,0,0),2)
-    cv2.line(frame,(res[0][0],res[0][1]),(res[3][0],res[3][1]),(255,0,0),2)
-    cv2.line(frame,(res[1][0],res[1][1]),(res[2][0],res[2][1]),(255,0,0),2)
-    cv2.line(frame,(res[2][0],res[2][1]),(res[3][0],res[3][1]),(255,0,0),2)
+        
     
-    cv2.line(frame,(res[4][0],res[4][1]),(res[5][0],res[5][1]),(0,0,255),2)
-    cv2.line(frame,(res[4][0],res[4][1]),(res[7][0],res[7][1]),(0,0,255),2)
-    cv2.line(frame,(res[5][0],res[5][1]),(res[6][0],res[6][1]),(0,0,255),2)
-    cv2.line(frame,(res[6][0],res[6][1]),(res[7][0],res[7][1]),(0,0,255),2)
-    
-    cv2.line(frame,(res[0][0],res[0][1]),(res[4][0],res[4][1]),(255,0,0),2)
-    cv2.line(frame,(res[1][0],res[1][1]),(res[5][0],res[5][1]),(255,0,0),2)
-    cv2.line(frame,(res[2][0],res[2][1]),(res[6][0],res[6][1]),(255,0,0),2)
-    cv2.line(frame,(res[3][0],res[3][1]),(res[7][0],res[7][1]),(255,0,0),2)
-    
+    return res
 
