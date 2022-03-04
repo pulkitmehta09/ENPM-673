@@ -65,14 +65,13 @@ while(True):
     params.filterByArea = True
     params.minArea = 20
     params.maxArea = 1000000
-    params
     
     
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(grayscale)
     im_with_keypoints = cv2.drawKeypoints(grayscale, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     blank = np.zeros((1,1)) 
-    # blobs = cv2.drawKeypoints(grayscale, keypoints, blank, (0,255,255), cv2.DRAW_MATCHES_FLAGS_DEFAULT)
+    blobs = cv2.drawKeypoints(grayscale, keypoints, blank, (0,255,255), cv2.DRAW_MATCHES_FLAGS_DEFAULT)
     
     # if not(got_fft) :
     #     fft(grayscale, frame)

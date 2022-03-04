@@ -56,6 +56,7 @@ while(True):
     
      
     corners = orderpts(approx)
+    
     H = homography(corners, C)
     warped = warpPerspective(H, frame, I)
 
@@ -75,6 +76,7 @@ while(True):
     #         x, y, z = np.dot(H_testudo_inv,[a,b,1])
     #         frame[int(y/z)][int(x/z)] = testudo[a][b]
     # ----------------------------------------------------------------
+    
     frame = warpTestudo(H_testudo, I, frame, testudo)
     
     
