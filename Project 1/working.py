@@ -19,7 +19,7 @@ cam = cv2.VideoCapture(videofile)
 
 testudo = cv2.imread('testudo.png')
 testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
-testudo = imutils.rotate(testudo, 90)   
+
 
 gotID = False       # Flag to check ID found or not
 got_fft = False
@@ -28,7 +28,7 @@ I = (200,200)       # Tag dimensions
 
 # Corner matrix -------------------------------
 C = np.array([0,0,200,0,200,200,0,200])
-
+prev_pose = 0
 count = 0
 
 while(True): 
@@ -51,7 +51,7 @@ while(True):
             # PolyDP
             peri = cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour,0.1 * peri,True)
-            cv2.drawContours(frame,[approx],-1,(0,255,0),3) 
+            # cv2.drawContours(frame,[approx],-1,(0,255,0),3) 
             # -------------------------------------
     
      
@@ -59,15 +59,25 @@ while(True):
     
     H = homography(corners, C)
     warped = warpPerspective(H, frame, I)
-
-    rotated = imutils.rotate(warped, 90)        # Full Tag rotated image
+    warped = cv2.flip(warped,0)
+    pose = get_tag_orientation(warped)
+    # print(pose)
+    rotated = orientTag(pose,warped)
+    # rotated = imutils.rotate(warped, 180)        # Full Tag rotated image
     center_tag = rotated[75:125,75:125]         # 2x2 grid of tag
     if not gotID:
         gotID, ID, ar = getTagID(center_tag)
- 
+        print("Tag ID: ", ID)
+        print(ar)
 
+    # pose = get_tag_orientation(rotated)
+    # print(pose)
+    if not (prev_pose == pose):
+        testudo = orientTestudo(pose, testudo)
+    
+    prev_pose = pose
     H_testudo = homography(C, corners)
-    # warped_testudo = warpPerspective(H_testudo, testudo, I) // not working, modify
+   
     # # ---------------------------------------------------------------- 
     # Working
     # H_testudo_inv = np.linalg.inv(H_testudo)
@@ -76,17 +86,20 @@ while(True):
     #         x, y, z = np.dot(H_testudo_inv,[a,b,1])
     #         frame[int(y/z)][int(x/z)] = testudo[a][b]
     # ----------------------------------------------------------------
+
+    # Superimposing Testudo
+    # frame = warpTestudo(H_testudo, I, frame, testudo)
     
-    frame = warpTestudo(H_testudo, I, frame, testudo)
-    
-    
+
     
     # -----------------------------------------------------------------
-    # Fourier 
+    # # Fourier 
     # if(count == 17)  :
     #     fft(grayscale, frame)
     #     got_fft = True
     # ---------------------------------------------------------------   
+    
+    # Cube
     H_cube = homography(corners, C)
     
     P, T = getProjectionMatrix(H) 
@@ -94,11 +107,10 @@ while(True):
         
     
     cv2.imshow('frame', frame)
+    # cv2.imshow('rotated', rotated)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     count+=1
 
 cam.release()
 cv2.destroyAllWindows()
-print("Tag ID: ", ID)
-print(ar)

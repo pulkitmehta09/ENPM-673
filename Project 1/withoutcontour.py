@@ -23,28 +23,7 @@ got_fft = False
 I = (200,200) 
 testudo = cv2.imread('testudo.png')
 testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
-testudo = imutils.rotate(testudo, 90)  
-# Align testudo bottom right corner with tag's changing BR corner so as to align the testudo always  
-
-# def filterCornersLine(corners, rows, cols):
-#     [vx, vy, x, y] = cv2.fitLine(corners, cv2.DIST_HUBER, 0, 0.1, 0.1)
-#     lefty = int((-x * vy / vx) + y)
-#     righty = int(((cols - x) * vy / vx) + y)
-
-#     cornerdata = []
-#     tt = 0
-#     for i in corners:
-#         xl, yl = i.ravel()
-#         # check distance to fitted line, only draw corners within certain range
-#         distance = dist(0, lefty, cols - 1, righty, xl, yl)
-#         if distance > 40:  ## threshold important -> make accessible
-#             cornerdata.append(tt)
-
-#         tt += 1
-
-#     corners_final = np.delete(corners, [cornerdata], axis=0)  # delete corners to form new array
-
-#     return corners_final 
+  
 
 while(True): 
     ret, frame = cam.read()
@@ -77,9 +56,9 @@ while(True):
     corners = np.int0(corners)
     
 
-    # for i in corners:
-    #     x,y = i.ravel()
-    #     cv2.circle(frame, (x,y), 5, (255,5,5), -1)
+    for i in corners:
+        x,y = i.ravel()
+        cv2.circle(frame, (x,y), 5, (255,5,5), -1)
     # ----------------------------------------------------------------
     # outer rectangle
     points = idkwhy(corners)
@@ -102,34 +81,43 @@ while(True):
     # rect = cv2.Canny(rect,50,100)
     corners2 = cv2.goodFeaturesToTrack(opening, 30, 0.1, 35)
     corners2 = np.int0(corners2)
-    for i in corners2:
-        x,y = i.ravel()
-        cv2.circle(frame2, (x,y), 5, (255,5,5), -1)
+    # for i in corners2:
+    #     x,y = i.ravel()
+    #     cv2.circle(frame2, (x,y), 5, (255,5,5), -1)
 
-    inrect = nearestpoint(points,corners2)
+    inrect = nearestpoint(points,corners)
     tag = orderpts(inrect)
-    cv2.circle(frame, tuple(inrect[0]), 5, (255,5,5), -1)
-    cv2.circle(frame, tuple(inrect[1]), 5, (255,5,5), -1)
-    cv2.circle(frame, tuple(inrect[2]), 5, (255,5,5), -1)
-    cv2.circle(frame, tuple(inrect[3]), 5, (255,5,5), -1)
+    # cv2.circle(frame, tuple(points[0]), 5, (255,5,5), -1)
+    # cv2.circle(frame, tuple(points[1]), 5, (255,5,5), -1)
+    # cv2.circle(frame, tuple(points[2]), 5, (255,5,5), -1)
+    # cv2.circle(frame, tuple(points[3]), 5, (255,5,5), -1)
     
     # TAG IDENTIFICATION
     tag = orderpts(tag)
     H = homography(tag, C)
     warped = warpPerspective(H, frame, I)
+    warped = cv2.flip(warped,0)
+    pose = get_tag_orientation(warped)
 
-    rotated = imutils.rotate(warped, 90)        # Full Tag rotated image
+    rotated = orientTag(pose,warped)       # Full Tag rotated image
     center_tag = rotated[75:125,75:125]  
+    
     if not gotID:
         gotID, ID, ar = getTagID(center_tag)
-        
+        print("Tag ID: ", ID)
+        print(ar)
+    
+    if not (prev_pose == pose):
+        testudo = orientTestudo(pose, testudo)
+     
+    prev_pose = pose    
     H_testudo = homography(C, tag)
     frame = warpTestudo(H_testudo, I, frame, testudo)
     
     H_cube = homography(tag, C)
     
     P, T = getProjectionMatrix(H) 
-    drawCube(P,frame)
+    # drawCube(P,frame)
         
     
     
@@ -141,5 +129,3 @@ while(True):
 cam.release()
 cv2.destroyAllWindows()
 
-print("Tag ID: ", ID)
-print(ar)
