@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 import scipy
 import imutils
 
-def fft(grayscale, frame):
+def fft(grayscale):
     f = scipy.fft.fft2(grayscale, axes = (0,1))
     fft_shift = scipy.fft.fftshift(f)
     mag_spec = 20 * np.log(np.abs(fft_shift))
@@ -32,28 +32,19 @@ def fft(grayscale, frame):
     img_back = np.fft.ifft2(f_ishift)
     img_back = np.abs(img_back)
     
-    # fig = plt.figure(figsize = (10, 10))
-    # plt.subplot(311)
-    # plt.imshow(frame, cmap = 'gray')
-    # plt.title("Original Image")
-    # plt.subplot(312)
-    # plt.imshow(mag_spec, cmap = 'gray')
-    # plt.subplot(313)
-    # plt.imshow(img_back, cmap = 'gray')
-    # plt.title("High Pass Filter (FFT)")
-    # fig.tight_layout()
-    # plt.savefig('fft')
-    # plt.show()
     
     fig = plt.figure(1)
     plt.imshow(grayscale, cmap = 'gray')
     plt.title("Original grayscaled image")
+    plt.savefig('Original gray-scaled image')
     fig2 = plt.figure(2)
     plt.imshow(mag_spec, cmap = 'gray')
     plt.title("Magnitude spectrum")
+    plt.savefig('Magitude spectrum')
     fig3 = plt.figure(3)
     plt.imshow(img_back, cmap = 'gray')
     plt.title("Edge-detected image")
+    plt.savefig('Edge-detected image')
     plt.show(block=False)
 
 def orderpts(pts):
@@ -145,15 +136,6 @@ def warpTestudo(H,dim,frame,testudo):
     return frame
 
 
-# Not required
-def RotateTag(warped, angle):
-    center = tuple(np.array(warped.shape[1::-1]) / 2)   # coordinates of center of image
-    R = cv2.getRotationMatrix2D(center, angle, 1.0)     # Rotation matrix
-    rotated = cv2.warpAffine(warped, R, warped.shape[1::-1], flags = cv2.INTER_LINEAR)
-    
-    return rotated
-
-# TODO later (Straighten tag without hardcoding)
 def get_tag_orientation(warped):
     
     TL = warped[50:75,50:75]
@@ -229,10 +211,10 @@ def getProjectionMatrix(H):
     else:
         B = -B_tilda
     
-    r1 = B[:,0]
-    r2 = B[:,1]
+    r1 = scale * B[:,0]
+    r2 = scale * B[:,1]
     r3 = np.cross(r1, r2)
-    t = B[:,2]
+    t = scale * B[:,2]
     T = np.column_stack((r1, r2, r3, t))
     P = np.matmul(K, T)
     

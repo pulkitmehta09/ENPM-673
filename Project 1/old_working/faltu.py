@@ -8,7 +8,7 @@ Created on Wed Mar  2 22:24:47 2022
 
 import numpy as np
 
-def idkwhy(corners):
+def get_Outer_Corners(corners):
     
     C = corners.reshape(-1,2)
     d1 = 0
@@ -39,7 +39,6 @@ def idkwhy(corners):
             
     return np.array([coor1,coor2,coor3,coor4])
 
-# Fartpoint sfrom window corner and then NEAREST POINTS FROM THE RESULTING ORDERED SET OF POINTS
 
 def dist(p1,p2):
     d = ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
@@ -51,13 +50,13 @@ def line(p1, p2, x, y):
     
     return abs(f)
 
-def getinnerpts(points,corners):
-    C = corners.reshape(-1,2)
+# def get_Inner_(points,corners):
+#     C = corners.reshape(-1,2)
     
-    for i in range(C.shape[0]):
-        line(points[0],points[2],C[i][0],C[i][1])
+#     for i in range(C.shape[0]):
+#         line(points[0],points[2],C[i][0],C[i][1])
     
-    return True
+#     return True
 
 
 def nearestpoint(excorner, corners):
@@ -100,3 +99,36 @@ def notonline(p1,p2,p3):
     if (line(p1,p2,p3[0],p3[1]) > 20):
         flag = True
     return flag;
+
+def sheetcorners(corners):
+    
+    a = corners.reshape(-1,2)
+
+    x = a[:,0]
+    y = a[:,1]
+    
+    xarg =  np.argsort(x)
+    
+    xmin_index = np.argmin(x)
+    xmin = x[xarg][0]
+    y_for_xmin = a[xmin_index][1]
+    C1 = [xmin,y_for_xmin]
+    
+    xmax_index = np.argmax(x)
+    xmax = x[xarg][-1]
+    y_for_xmax = a[xmax_index][1]
+    C2 = [xmax,y_for_xmax]
+    
+    yarg = np.argsort(y)
+    
+    ymin_index = np.argmin(y)
+    ymin = y[yarg][0]
+    x_for_ymin = a[ymin_index][0]
+    C3 = [x_for_ymin,ymin]
+    
+    ymax_index = np.argmax(y)
+    ymax = y[yarg][-1]
+    x_for_ymax = a[ymax_index][0]
+    C4 = [x_for_ymax,ymax]
+    
+    return np.array([C1,C2,C3,C4])

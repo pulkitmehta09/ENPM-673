@@ -93,10 +93,10 @@ while(True):
 
     
     # -----------------------------------------------------------------
-    # # Fourier 
-    # if(count == 17)  :
-    #     fft(grayscale, frame)
-    #     got_fft = True
+    # Fourier 
+    if(count == 17)  :
+        fft(grayscale)
+        got_fft = True
     # ---------------------------------------------------------------   
     
     # Cube

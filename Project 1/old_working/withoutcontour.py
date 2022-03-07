@@ -23,15 +23,15 @@ got_fft = False
 I = (200,200) 
 testudo = cv2.imread('testudo.png')
 testudo = cv2.resize(testudo, (200,200), interpolation= cv2.INTER_LINEAR)
-  
+prev_pose = 0
 
 while(True): 
     ret, frame = cam.read()
-    frame2 = frame.copy()
+    
     # Check if the frame exists, if not exit 
     if not ret:
         break
-     
+    frame2 = frame.copy() 
     grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
     ret,thresh = cv2.threshold(grayscale,180,255,cv2.THRESH_BINARY)
     
@@ -56,12 +56,12 @@ while(True):
     corners = np.int0(corners)
     
 
-    for i in corners:
-        x,y = i.ravel()
-        cv2.circle(frame, (x,y), 5, (255,5,5), -1)
+    # for i in corners:
+    #     x,y = i.ravel()
+    #     cv2.circle(frame, (x,y), 5, (255,5,5), -1)
     # ----------------------------------------------------------------
     # outer rectangle
-    points = idkwhy(corners)
+    points = sheetcorners(corners)
     points = orderpts(points)
     
     
@@ -85,41 +85,46 @@ while(True):
     #     x,y = i.ravel()
     #     cv2.circle(frame2, (x,y), 5, (255,5,5), -1)
 
-    inrect = nearestpoint(points,corners)
+    inrect = nearestpoint(points,corners2)
     tag = orderpts(inrect)
-    # cv2.circle(frame, tuple(points[0]), 5, (255,5,5), -1)
-    # cv2.circle(frame, tuple(points[1]), 5, (255,5,5), -1)
-    # cv2.circle(frame, tuple(points[2]), 5, (255,5,5), -1)
-    # cv2.circle(frame, tuple(points[3]), 5, (255,5,5), -1)
+    cv2.circle(frame, tuple(tag[0]), 5, (255,5,5), -1)
+    cv2.circle(frame, tuple(tag[1]), 5, (255,5,5), -1)
+    cv2.circle(frame, tuple(tag[2]), 5, (255,5,5), -1)
+    cv2.circle(frame, tuple(tag[3]), 5, (255,5,5), -1)
     
     # TAG IDENTIFICATION
-    tag = orderpts(tag)
-    H = homography(tag, C)
-    warped = warpPerspective(H, frame, I)
-    warped = cv2.flip(warped,0)
-    pose = get_tag_orientation(warped)
+    # tag = orderpts(tag)
+    # H = homography(tag, C)
+    # warped = warpPerspective(H, frame, I)
+    # warped = cv2.flip(warped,0)
+    # pose = get_tag_orientation(warped)
 
-    rotated = orientTag(pose,warped)       # Full Tag rotated image
-    center_tag = rotated[75:125,75:125]  
+    # rotated = orientTag(pose,warped)       # Full Tag rotated image
+    # center_tag = rotated[75:125,75:125]  
     
-    if not gotID:
-        gotID, ID, ar = getTagID(center_tag)
-        print("Tag ID: ", ID)
-        print(ar)
+    # if not gotID:
+    #     gotID, ID, ar = getTagID(center_tag)
+    #     print("Tag ID: ", ID)
+    #     print(ar)
     
-    if not (prev_pose == pose):
-        testudo = orientTestudo(pose, testudo)
+    # if not (prev_pose == pose):
+    #     testudo = orientTestudo(pose, testudo)
      
-    prev_pose = pose    
-    H_testudo = homography(C, tag)
-    frame = warpTestudo(H_testudo, I, frame, testudo)
+    # prev_pose = pose    
+    # H_testudo = homography(C, tag)
+    # frame = warpTestudo(H_testudo, I, frame, testudo)
     
-    H_cube = homography(tag, C)
+    # H_cube = homography(tag, C)
     
-    P, T = getProjectionMatrix(H) 
+    # P, T = getProjectionMatrix(H) 
     # drawCube(P,frame)
         
-    
+    # -----------------------------------------------------------------
+    # # Fourier 
+    # if(count == 17)  :
+    #     fft(grayscale)
+    #     got_fft = True
+    # ---------------------------------------------------------------  
     
     cv2.imshow('frame', frame)
     
