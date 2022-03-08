@@ -174,7 +174,7 @@ def warp(H,img,dim):
     return warped
 
 
-def warpTestudo(H,dim,frame,testudo):
+def Testudo_forward_warping(H,dim,frame,testudo):
     """
     Warpes the template testudo image onto the tag in frame.
 
@@ -195,12 +195,51 @@ def warpTestudo(H,dim,frame,testudo):
         Frame on which template image is superimposed.
 
     """
-    H_inv = np.linalg.inv(H)
+    
     for a in range(dim[1]):
         for b in range(dim[0]):
-            x, y, z = np.matmul(H_inv,[a,b,1])
+            x, y, z = np.matmul(H,[a,b,1])
+            # print(int(x/z),int(y/z))
             frame[int(y/z)][int(x/z)] = testudo[a][b] 
             
+    return frame
+
+
+def inverse_warp(H, tag, frame, testudo):
+    """
+    Performs inverse warping.
+
+    Parameters
+    ----------
+    H : Array
+        Homography matrix.
+    tag : Array
+        Corners of the AR tag.
+    frame : Array
+        Video frame.
+    testudo : Array
+        Testudo template image.
+
+    Returns
+    -------
+    frame : Array
+        Testudo warped video frame.
+
+    """
+    
+    H_inv = np.linalg.inv(H)
+
+    for i in range(int(tag[0,0]) - 200, int(tag[1,0] + 200)):
+        for j in range(int(tag[0,1]) - 200, int(tag[3,1]) + 200):
+            x,y,z = np.matmul(H_inv,[i,j,1])
+            x = int(x/z)
+            y = int(y/z)
+            # print(x,y)
+            if (x > 199 or y > 199 or x < 0 or y < 0):
+                pass
+            else:
+                frame[j][i] = testudo[x][y]  
+    
     return frame
 
 
@@ -265,7 +304,7 @@ def orientTag(pose,warped):
     return warped
     
 
-def orientTestudo(pose,testudo):
+def orientTestudo(pose,testudo,prev_pose):
     """
     Rotates the testudo template image accordingly to align with the tag orientation in each frame.
 
@@ -283,15 +322,34 @@ def orientTestudo(pose,testudo):
 
     """
     
-    if (pose == 0):
-        testudo = imutils.rotate(testudo, 0)
-    if (pose == 1):
-        testudo = imutils.rotate(testudo, 0)
-    if (pose == 2):
-        testudo = imutils.rotate(testudo, 0)
-    if (pose == 3):
-        testudo = imutils.rotate(testudo, 90)
+    # if (pose == 0):
+    #     testudo = imutils.rotate(testudo, 0)
+    # if (pose == 1):
+    #     testudo = imutils.rotate(testudo, 90)
+    # if (pose == 1 and prev_pose == 3):
+    #     testudo = imutils.rotate(testudo, 180)
+    # if (pose == 2):
+    #     testudo = imutils.rotate(testudo, 0)
+    # if (pose == 3 and prev_pose == 0):
+    #     testudo = imutils.rotate(testudo, 270)
+    # if (pose == 3 and prev_pose == 1):
+    #     testudo = imutils.rotate(testudo, 180)
     
+    if (pose - prev_pose == 1):
+        testudo = imutils.rotate(testudo, 0)
+        print(prev_pose, "Rotated by 0", pose)
+    if (pose - prev_pose == -1):
+        testudo = imutils.rotate(testudo, 0)
+        print(prev_pose, "Rotated by 0", pose)
+    if (pose - prev_pose == -2): # Fine
+        testudo = imutils.rotate(testudo, 90)
+        print(prev_pose, "Rotated by 0", pose)
+    if (pose - prev_pose == 2): # Fine
+        testudo = imutils.rotate(testudo, 0)
+        print(prev_pose, "Rotated by 0", pose)
+    if (pose - prev_pose == 3): # Fine
+        testudo = imutils.rotate(testudo, 90)
+        print(prev_pose, "Rotated by 90", pose)
     return testudo
     
 

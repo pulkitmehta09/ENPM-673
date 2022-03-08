@@ -27,6 +27,8 @@ from TagUtils import Find_tag_corners
 videofile = '1tagvideo.mp4'                                                     # Video file
 cam = cv2.VideoCapture(videofile)
 
+C = np.array([0,0,200,0,200,200,0,200])                                         # Defining corner points in world frame for template image.
+I = (200,200)                                                                   # Defining reference dimensions
 gotID = False                                                                   # Flag to check ID found or not
 
 while(True): 
@@ -39,19 +41,21 @@ while(True):
     tag = Find_tag_corners(frame)                                               # Finding the corners of the AR tag.
 
     # Tag Identification
-    H = homography(tag, C)                                                      # Calculating Homography matrix                                      
-    warped = warp(H, frame, I)                                                  # Warping the tag to get birds-eye view.
-    warped = cv2.flip(warped,0)
-    pose = get_tag_orientation(warped)                                          # Getting the orientation information of the tag.
-
-    oriented = orientTag(pose,warped)                                           # Oriented tag(upright position) 
-    center_tag = oriented[75:125,75:125]                                        # Center 2x2 grid of the correctly oriented tag.
+    # Checking if the retrieved tag's aspect ratio is within acceptable value so as to avoid further operations on incorrectly detected points.
+    if (0.9 < get_aspect_ratio(tag) < 1.1):    
+        H = homography(tag, C)                                                      # Calculating Homography matrix                                      
+        warped = warp(H, frame, I)                                                  # Warping the tag to get birds-eye view.
+        warped = cv2.flip(warped,0)
+        pose = get_tag_orientation(warped)                                          # Getting the orientation information of the tag.
     
-    # Check if Tag ID is retrieved or not, if not, find the ID
-    if not gotID:
-        gotID, ID, ar = getTagID(center_tag)
-        print("Tag ID: ", ID)
-        print("Binary representation of tag: ", ar)
+        oriented = orientTag(pose,warped)                                           # Oriented tag(upright position) 
+        center_tag = oriented[75:125,75:125]                                        # Center 2x2 grid of the correctly oriented tag.
+        
+        # Check if Tag ID is retrieved or not, if not, find the ID
+        if not gotID:
+            gotID, ID, ar = getTagID(center_tag)
+            print("Tag ID: ", ID)
+            print("Binary representation of tag: ", ar)
     
     cv2.imshow('Warped and oriented tag', oriented)
     cv2.imshow("Centre 2x2 grid of tag", center_tag)

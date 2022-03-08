@@ -27,6 +27,10 @@ from TagUtils import Find_tag_corners
 videofile = '1tagvideo.mp4'                                                     # Video file
 cam = cv2.VideoCapture(videofile)
 
+C = np.array([0,0,200,0,200,200,0,200])                                         # Defining corner points in world frame for template image.
+I = (200,200)                                                                   # Defining reference dimensions
+
+
 while(True): 
     ret, frame = cam.read()                                                     # Reading the frame from video
     
@@ -40,7 +44,7 @@ while(True):
     if (0.9 < get_aspect_ratio(tag) < 1.1):
         H = homography(tag, C)                                                  # Calculating Homography matrix         
         P, T = getProjectionMatrix(H)                                           # Calculating Projection and transformation matrix     
-        drawCube(P,frame)                                                       # Draw the cube on the tag
+        drawCube(P,frame)                                                    # Draw the cube on the tag
     
     cv2.imshow('Virtual cube on AR Tag', frame)
     

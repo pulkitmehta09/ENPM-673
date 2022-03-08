@@ -136,7 +136,7 @@ def notonline(p1,p2,p3):
     return flag;
 
 
-def nearestpoint(excorner, corners):
+def nearest_points(excorner, corners):
     """
     Retrieves the point nearest to another point.
     Creates lines between adjacent points and filters out points in close proximity to the line.
@@ -202,12 +202,12 @@ def get_outer_corners(corners):
     Parameters
     ----------
     corners : Array
-        DESCRIPTION.
+        Coordinates of the detected corners.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    Array
+        Four corner points of the outer white sheet.
 
     """
     
@@ -245,17 +245,17 @@ def get_outer_corners(corners):
 
 def get_aspect_ratio(points):
     """
-    
+    Determines the aspect ratio of a quadrilateral
 
     Parameters
     ----------
-    points : TYPE
-        DESCRIPTION.
+    points : Array
+        Coordinates of the corner points.
 
     Returns
     -------
-    aspect_ratio : TYPE
-        DESCRIPTION.
+    aspect_ratio : double
+        Aspect ratio.
 
     """
     

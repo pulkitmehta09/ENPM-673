@@ -66,7 +66,7 @@ def Find_tag_corners(frame):
     corners2 = np.int0(corners2)
     # ---------------------------------------------------------------
     
-    tag = nearestpoint(points,corners2)                                         # Finding the corners of the AR tag
-    tag = orderpts(tag)                                                         # Ordering tag corners in the order: TL, TR, BR, BL.
+    tag = nearest_points(points,corners2)                                         # Finding the corners of the AR tag
+    tag = orderpts(tag)                                                           # Ordering tag corners in the order: TL, TR, BR, BL.
     
     return tag
