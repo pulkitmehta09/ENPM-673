@@ -88,18 +88,8 @@ def make_cumsum(histogram):
         cumsum[i] = cumsum[i-1] + histogram[i]
     return cumsum
 
-def make_mapping(histogram, cumsum):
-    """ Create a mapping s.t. each old luma value is mapped to a new
-        one between 0 and 255. Mapping is created using:
-         - M(i) = max(0, round((levels*cumsum(i))/(h*w))-1)
-        where luma_levels is the number of levels in the image """
-    mapping = np.zeros(256, dtype=int)
-    levels = 256
-    for i in range(histogram.size):
-        mapping[i] = max(0, round((levels*cumsum[i])/(IMG_H*IMG_W))-1)
-    return mapping
 
-def make_admapping(histogram, cumsum, h, w):
+def make_mapping(histogram, cumsum, h, w):
     """ Create a mapping s.t. each old luma value is mapped to a new
         one between 0 and 255. Mapping is created using:
          - M(i) = max(0, round((levels*cumsum(i))/(h*w))-1)
@@ -109,7 +99,6 @@ def make_admapping(histogram, cumsum, h, w):
     for i in range(histogram.size):
         mapping[i] = max(0, round((levels*cumsum[i])/(h*w))-1)
     return mapping
-
 
 
 def apply_mapping(img, mapping):
@@ -132,7 +121,7 @@ gimg = adjust_gamma(img, gamma=1.4)
 
 hist = make_histogram(conv)
 cumsum = make_cumsum(hist)
-mapping = make_mapping(hist, cumsum)
+mapping = make_mapping(hist, cumsum, IMG_H, IMG_W)
 new_convimage = apply_mapping(conv, mapping)
 new_image = cv2.cvtColor(new_convimage, cv2.COLOR_HSV2BGR_FULL)
 # new_gamma = adjust_gamma(new_image, gamma=1.2)
@@ -142,7 +131,7 @@ new_image = cv2.cvtColor(new_convimage, cv2.COLOR_HSV2BGR_FULL)
 
 
 # -------------------------ADAPTIVE----------------------------------
-N = 8
+N = 6
 w = IMG_W // N
 h = IMG_H // N
 # start = 0
@@ -167,7 +156,7 @@ for i in range(N):
     for j in range(N):    
         a_hist = make_histogram(ad_img[i * h:(i+1) * h, j * w:(j+1) * w,:])
         a_cumsum = make_cumsum(a_hist)
-        a_mapping = make_admapping(a_hist, a_cumsum,h ,w)
+        a_mapping = make_mapping(a_hist, a_cumsum,h ,w)
         new_ad_image[i * h:(i+1) * h, j * w:(j+1) * w,:] = apply_mapping(ad_img[i * h:(i+1) * h, j * w:(j+1) * w,:], a_mapping)
         # np.append(tile_array,tile)
 
