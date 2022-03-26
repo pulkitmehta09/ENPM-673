@@ -7,100 +7,72 @@ Created on Wed Mar 23 13:00:28 2022
 """
 
 
-import cv2
-import numpy as np
-import imutils
-import glob
-from matplotlib import pyplot as plt
-from PIL import Image
-from cv2 import VideoWriter, VideoWriter_fourcc 
+from HistEqUtils import *
 
-
+# Read the given images
 images = [cv2.imread(file) for file in glob.glob("adaptive_hist_data/*.png")]
 
 IMG_W = images[0].shape[1]
 IMG_H = images[0].shape[0]
-N = 12
+N = 2
 w = IMG_W // N
 h = IMG_H // N
 
 
+x = np.linspace(0,255,256)
+
 FPS = 1                                                                       
-fourcc = VideoWriter_fourcc(*'MP4V')
+fourcc = VideoWriter_fourcc(*'mp4v')
 video = VideoWriter('./original.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
-video_he = VideoWriter('./histogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
-video_ahe = VideoWriter('./adaptivehistogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
-
-
-def make_histogram(img):
-    """ Take an image and create a histogram from it's luma values """
-    y_vals = img[:,:,2].flatten()
-    histogram = np.zeros(256, dtype=int)
-    for y_index in range(y_vals.size):
-        histogram[y_vals[y_index]] += 1
-    return histogram
-
-def make_cumsum(histogram):
-    """ Create an array that represents the cumulative sum of the histogram """
-    cumsum = np.zeros(256, dtype=int)
-    cumsum[0] = histogram[0]
-    for i in range(1, histogram.size):
-        cumsum[i] = cumsum[i-1] + histogram[i]
-    return cumsum
-
-
-def make_mapping(histogram, cumsum, h, w):
-    """ Create a mapping s.t. each old luma value is mapped to a new
-        one between 0 and 255. Mapping is created using:
-         - M(i) = max(0, round((levels*cumsum(i))/(h*w))-1)
-        where luma_levels is the number of levels in the image """
-    mapping = np.zeros(256, dtype=int)
-    levels = 256
-    for i in range(histogram.size):
-        mapping[i] = max(0, round((levels*cumsum[i])/(h*w))-1)
-    return mapping
-
-
-def apply_mapping(img, mapping):
-    """ Apply the mapping to our image """
-    new_image = img.copy()
-    new_image[:,:,2] = list(map(lambda a : mapping[a], img[:,:,2]))
-    return new_image
+he_video = VideoWriter('./histogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
+ahe_video = VideoWriter('./adaptivehistogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
 
 
 
 for i in range(len(images)):
     img = images[i]
     video.write(img)
-    
-    
-    conv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
+    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     
     # Histogram equalization
-    hist = make_histogram(conv)
-    cumsum = make_cumsum(hist)
-    mapping = make_mapping(hist, cumsum, IMG_H, IMG_W)
-    new_convimage = apply_mapping(conv, mapping)
-    new_image = cv2.cvtColor(new_convimage, cv2.COLOR_HSV2BGR_FULL)
-    video_he.write(new_image)
+    hist = create_histogram(hsv)
+    cumsum = create_cumulative_sum(hist)
+    mapping = create_mapping(hist, cumsum, IMG_H, IMG_W)
+    he_image_hsv = apply_mapping(hsv, mapping)
+    he_image = cv2.cvtColor(he_image_hsv, cv2.COLOR_HSV2BGR_FULL)
+    he_video.write(he_image)
+    
     
     # Adaptive Histogram Equalization
-    ad_img = conv.copy()
-    new_ad_image = np.zeros_like(img)
+    hsv_copy = hsv.copy()
+    ahe_image_hsv = np.zeros_like(img)
     for i in range(N):
         for j in range(N):    
-            a_hist = make_histogram(ad_img[i * h:(i+1) * h, j * w:(j+1) * w,:])
-            a_cumsum = make_cumsum(a_hist)
-            a_mapping = make_mapping(a_hist, a_cumsum,h ,w)
-            new_ad_image[i * h:(i+1) * h, j * w:(j+1) * w,:] = apply_mapping(ad_img[i * h:(i+1) * h, j * w:(j+1) * w,:], a_mapping)
+            a_hist = create_histogram(hsv_copy[i * h:(i+1) * h, j * w:(j+1) * w,:])
+            a_cumsum = create_cumulative_sum(a_hist)
+            a_mapping = create_mapping(a_hist, a_cumsum,h ,w)
+            ahe_image_hsv[i * h:(i+1) * h, j * w:(j+1) * w,:] = apply_mapping(hsv_copy[i * h:(i+1) * h, j * w:(j+1) * w,:], a_mapping)
         
-    res_image = cv2.cvtColor(new_ad_image, cv2.COLOR_HSV2BGR_FULL)
-    video_ahe.write(res_image)
-
-
-
+    ahe_image = cv2.cvtColor(ahe_image_hsv, cv2.COLOR_HSV2BGR_FULL)
+    ahe_video.write(ahe_image)
+# cv2.imwrite('ahe_N2.png',ahe_image)
 video.release()    
-video_he.release()
-video_ahe.release()
+he_video.release()
+ahe_video.release()
 
-    
+
+# # CLAHE
+
+# res_convimage = cv2.cvtColor(ahe_image, cv2.COLOR_BGR2HSV)
+# hist_res = make_histogram(res_convimage)
+# chist = clipping(hist_res)
+# ccumsum = make_cumsum(chist)
+# cmapping = make_mapping(chist, ccumsum, h, w)
+# capplied = apply_mapping(res_convimage, cmapping)
+# cimage = cv2.cvtColor(capplied, cv2.COLOR_HSV2BGR_FULL)
+
+# cv2.imshow('frame', cimage)
+# cv2.imshow('frame1', ahe_image)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
