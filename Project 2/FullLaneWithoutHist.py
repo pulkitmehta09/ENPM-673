@@ -5,7 +5,7 @@ Created on Fri Mar 25 20:48:57 2022
 
 @author: pulkit
 """
-
+#  Without history, Full lane
 import cv2
 import numpy as np
 from utils import Modify_frame, region, classify, adjust_gamma, prepare_warped
@@ -69,6 +69,7 @@ def sliding_windown(img_w):
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xright_low) & (
             nonzerox < win_xright_high)).nonzero()[0]
         # Append these indices to the lists
+        
         left_lane_inds.append(good_left_inds)
         right_lane_inds.append(good_right_inds)
         # If you found > minpix pixels, recenter next window on their mean position
@@ -102,7 +103,14 @@ def sliding_windown(img_w):
     cv2.polylines(out_img, [verts_left], False, [0,0,255], 2)
     verts_right = np.array(list(zip(right_fitx.astype(int), ploty.astype(int))))
     cv2.polylines(out_img, [verts_right], False, [0,0,255], 2)
-   
+    # cv2.line(out_img,(int(left_fitx[0]),int(ploty[0])),(int(right_fitx[0]),int(ploty[0])),(255,0,0),2)
+    # cv2.fillPoly(out_img, pts = np.int8([corners]), color = (0,0,255))
+    
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))    
+    corners = np.array([[left_fitx, ploty], [right_fitx, ploty]], dtype = np.int32)
+    cv2.fillPoly(out_img, np.int32([pts]), color = (0,0,255,100))
     # plt.imshow(out_img)
     # plt.plot(left_fitx, ploty, color='yellow')
     # plt.plot(right_fitx, ploty, color='yellow')
@@ -127,9 +135,9 @@ while(True):
     _,_, out = sliding_windown(comb)
     
     unwarp = cv2.warpPerspective(out, np.linalg.inv(matrix), (frame.shape[1],frame.shape[0]))
-   
+    result = cv2.bitwise_or(unwarp, frame)
     
-    cv2.imshow('frame', unwarp)
+    cv2.imshow('frame', result)
     if cv2.waitKey(50) & 0xFF == ord('q'):
         break
     

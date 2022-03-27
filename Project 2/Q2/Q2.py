@@ -238,11 +238,12 @@ while(True):
     comb2 = imutils.resize(comb2, height = 540)
     # cv2.imshow('res', out_img)
     
-    # captions = np.zeros((100,frame.shape[1],3))
-    # captions[:,:,:] = [255,120,0]
-    # cap_img = np.vstack((frame,captions))
+    captions = np.zeros((100,comb2.shape[1],3))
+    captions[:,:,:] = [0,0,0]
+    # captions = cv2.cvtColor(captions, cv2.COLOR_BGR2HSV)
+    cap_img = np.vstack((comb2,captions))
     
-    cv2.imshow('frame', comb2)
+    cv2.imshow('frame', cap_img)
     if cv2.waitKey(50) & 0xFF == ord('q'):
         break
     
