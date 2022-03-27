@@ -21,6 +21,8 @@ yellow_HSV_th_max = np.array([50, 255, 255])
 count = 0
 left_diff = []
 right_diff = []
+slope_hist = []
+
 
 def sliding_windown(img_w, out_img):
 
@@ -144,8 +146,19 @@ def draw_lane(left_fit, right_fit, out_img):
     avg_fit = (left_fitx + right_fitx) / 2
     avg_verts = np.array(list(zip(avg_fit.astype(int), ploty.astype(int))))
     cv2.polylines(out_img, [avg_verts], False, [0,255,0],2)
-                         
     
+    # Arrows
+    number_arrows = 10
+    all_pts = avg_verts[::20]
+    end_pts = all_pts[::2]
+    end_pts = end_pts[::-1]
+    start_pts = all_pts[1::2]
+    start_pts = start_pts[::-1]
+    start_pts_t = [tuple(e) for e in start_pts]
+    end_pts_t = [tuple(e) for e in end_pts]
+    
+    for i in range(number_arrows):     
+        cv2.arrowedLine(out_img, start_pts_t[i], end_pts_t[i], (255,0,0), 2, tipLength = 0.5)
     return out_img
 
 
@@ -174,7 +187,7 @@ def fit_from_lines(left_fit, right_fit, out_img):
     return left_fit, right_fit
 
 
-def compare_fits(left_fit_prev, right_fit_prev, left_fit, right_fit):
+def compare_fits(left_fit_prev, right_fit_prev, left_fit, right_fit, out_img):
     
     ploty = np.linspace(0, out_img.shape[0] - 1, out_img.shape[0])
     left_fitx_prev = left_fit_prev[0] * ploty ** 2 + left_fit_prev[1] * ploty + left_fit_prev[2]
@@ -190,6 +203,30 @@ def compare_fits(left_fit_prev, right_fit_prev, left_fit, right_fit):
     return left_diff_x, right_diff_x
 
 
+def get_curvature(left_fit, right_fit, img_shape):
+    
+    y_meters_per_pixel = 30 / 720
+    x_meters_per_pixel = 3.7 / 1280
+    
+    y_img = img_shape[0]
+
+    avg_fit = (left_fit + right_fit) / 2
+    
+    left_curvature = ((1 + (2 * left_fit[0] * y_img * y_meters_per_pixel + left_fit[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit[0])
+    right_curvature = ((1 + (2 * right_fit[0] * y_img * y_meters_per_pixel + right_fit[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit[0])
+    avg_curvature = ((1 + (2 * avg_fit[0] * y_img * y_meters_per_pixel + avg_fit[1]) ** 2) ** 1.5) / np.absolute(2 * avg_fit[0])
+                                                                                                                 
+    slope = 2 * avg_fit[0] * y_img * y_meters_per_pixel + avg_fit[1]
+    if (-0.1 < slope < 0):
+        turn = 'Slight Right'
+    if (slope < -0.1):
+        turn = 'Right'
+    
+    
+    return left_curvature, right_curvature, avg_curvature, turn, slope
+
+
+
 while(True): 
     ret, frame = cam.read()                                                     # Reading the frame from video
        
@@ -197,9 +234,12 @@ while(True):
     if not ret:
         break
     
-    # roi = region(frame)
-    comb, matrix = prepare_warped(frame)
+    # # roi = region(frame)
     
+    
+    
+    comb, matrix = prepare_warped(frame)
+
     # classified = classify(comb)
  
     out_img = cv2.cvtColor(comb, cv2.COLOR_GRAY2BGR)
@@ -211,14 +251,9 @@ while(True):
     right_fit_prev = right_fit
     
     left_fit, right_fit, _ = sliding_windown(comb, out_img)
-    ld, rd = compare_fits(left_fit_prev, right_fit_prev,left_fit, right_fit)
+    ld, rd = compare_fits(left_fit_prev, right_fit_prev,left_fit, right_fit, out_img)
     left_diff.append(np.mean(ld))
-    right_diff.append(np.mean(rd))
-    if (np.mean(ld) > 5):
-        print("large ld")
-    if (np.mean(rd) > 5):
-        print("large value of rd")
-    
+    right_diff.append(np.mean(rd))    
     
     if (np.mean(ld) > 25):
         left_fit = left_fit_prev
@@ -235,12 +270,17 @@ while(True):
     
     
     # left_fit, right_fit = fit_from_lines(left_fit, right_fit, comb)
+     
+    left_curvature, right_curvature, avg_curvature, turn, slope = get_curvature(left_fit, right_fit, frame.shape)
+    slope_hist.append(slope)
     
     lane_region = draw_lane(left_fit, right_fit, out_img)
  
     unwarp = cv2.warpPerspective(lane_region, np.linalg.inv(matrix), (frame.shape[1],frame.shape[0]))
     result = cv2.bitwise_or(unwarp, frame)
     
+    cv2.putText(result, 'Curvature - Left: {:.0f} m; Right: {:.0f} m; Center: {:.0f} m'.format(left_curvature,right_curvature,avg_curvature), (100,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+    cv2.putText(result, 'Turn: {}'.format(turn), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
     cv2.imshow('frame', result)
     if cv2.waitKey(50) & 0xFF == ord('q'):
         break
