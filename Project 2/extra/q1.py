@@ -1,27 +1,286 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 26 09:41:03 2022
+Created on Fri Apr  1 20:49:36 2022
 
 @author: pulkit
 """
 
-#  Without history, cropped lane
+from HistEqUtils import *
+
+
+# def adjust_gamma(image, gamma=1.0):
+
+# 	# build a lookup table mapping the pixel values [0, 255] to
+# 	# their adjusted gamma values
+#     invGamma = 1.0 / gamma
+#     table = np.array([((i / 255.0) ** invGamma) * 255
+# 		for i in np.arange(0, 256)]).astype("uint8")
+# 	# apply gamma correction using the lookup table
+#     return cv2.LUT(image, table)
+
+
+# def clipping(hist):
+#     N = 256
+#     beta = 3000
+#     excess = 0
+#     for i in range(N):
+#         if(hist[i] > beta):
+#             excess += hist[i] - beta
+#             hist[i] = beta
+    
+#     m = excess / N
+#     for i in range(N):
+#         if(hist[i] < beta - m):
+#             hist[i] += m
+#             excess -= m
+#         elif(hist[i] < beta):
+#             excess += hist[i] - beta
+#             hist[i] = beta
+            
+#     while (excess > 0):
+#         for i in range(N):
+#             if(excess > 0):
+#                 if(hist[i] < beta):
+#                     hist[i] += 1
+#                     excess -= 1
+    
+#     return hist
+
+# Read the given images
+images = [cv2.imread(file) for file in glob.glob("adaptive_hist_data/*.png")]
+
+IMG_W = images[0].shape[1]                                                      # Frame width        
+IMG_H = images[0].shape[0]                                                      # Frame height            
+N = 16                                                                          # Number of tiles across the width or height of the frame
+w = IMG_W // N                                                                  # Width of tile
+h = IMG_H // N                                                                  # Height of tile
+
+x = np.linspace(0,255,256)
+
+# Defining video writers
+FPS = 1                                                                       
+fourcc = VideoWriter_fourcc(*'mp4v')
+video = VideoWriter('./original.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
+he_video = VideoWriter('./histogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
+ahe_video = VideoWriter('./adaptivehistogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
+# swahe_video = VideoWriter('./swadaptivehistogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
+
+
+# Looping through the given images
+for i in range(len(images)):
+    
+    if(i==0):
+        print("performing histogram equalization...")
+    
+    img = images[i]
+    video.write(img)                                                            # Video of original frames
+
+    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)                                   # Converting to HSV space
+    
+    # Histogram equalization
+    hist = create_histogram(hsv)
+    cumsum = create_cumulative_sum(hist)
+    mapping = create_mapping(hist, cumsum, IMG_H, IMG_W)
+    he_image_hsv = apply_mapping(hsv, mapping)
+    he_image = cv2.cvtColor(he_image_hsv, cv2.COLOR_HSV2BGR_FULL)
+    he_video.write(he_image)
+    
+    
+    # Adaptive Histogram Equalization
+    hsv_copy = hsv.copy()
+    ahe_image_hsv = np.zeros_like(img)
+    for i in range(N):
+        for j in range(N):    
+            a_hist = create_histogram(hsv_copy[i * h:(i+1) * h, j * w:(j+1) * w,:])
+            a_cumsum = create_cumulative_sum(a_hist)
+            a_mapping = create_mapping(a_hist, a_cumsum,h ,w)
+            ahe_image_hsv[i * h:(i+1) * h, j * w:(j+1) * w,:] = apply_mapping(hsv_copy[i * h:(i+1) * h, j * w:(j+1) * w,:], a_mapping)
+        
+    ahe_image = cv2.cvtColor(ahe_image_hsv, cv2.COLOR_HSV2BGR_FULL)
+    ahe_video.write(ahe_image)
+
+    # # Sliding window
+    # shsv_copy = hsv.copy()
+    # swahe_image_hsv = np.zeros_like(img)
+    # for i in range(0, IMG_H, 20):
+    #     for j in range(0, IMG_W, 60):
+    #         sa_hist = create_histogram(shsv_copy[i:i+h, j:j+w,:])
+    #         sa_cumsum = create_cumulative_sum(sa_hist)
+    #         sa_mapping = create_mapping(sa_hist, sa_cumsum,h ,w)
+    #         swahe_image_hsv[i:i+h, j:j+w,:] = apply_mapping(shsv_copy[i:i+h, j:j+w,:], sa_mapping)
+        
+    # swahe_image = cv2.cvtColor(swahe_image_hsv, cv2.COLOR_HSV2BGR_FULL)
+    # swahe_video.write(swahe_image)
+
+# cv2.imwrite('ahe_N2.png',ahe_image)
+video.release()    
+he_video.release()
+ahe_video.release()
+# swahe_video.release()
+
+print("Videos saved in the current working directory")
+
+
+
+
+# Q2
+def make_HoughLines(frame):
+    lines = cv2.HoughLinesP(frame, 2, np.pi/180, 100, minLineLength = 40, maxLineGap = 5)
+    for x1,y1,x2,y2 in lines[0]:
+        cv2.line(frame,(x1,y1),(x2,y2),(0,255,0),2)
+    return frame
+
+
+# Q3
+"""
+Created on Fri Mar 25 20:42:34 2022
+
+ENPM 673
+Project 2 Question3
+
+@author: Pulkit Mehta
+UID: 117551693
+"""
+
 import cv2
 import numpy as np
-from CroppedLaneutils import Modify_frame, region, classify, adjust_gamma, prepare_warped
+import imutils
 
 
+def Modify_frame(frame):
+    """
+    Obtains the thresholded image.
 
-videofile = 'challenge.mp4'                                                     # Video file
-cam = cv2.VideoCapture(videofile)  
+    Parameters
+    ----------
+    frame : ndArray
+        Image BGR frame.
 
-yellow_HSV_th_min = np.array([0, 70, 70])
-yellow_HSV_th_max = np.array([50, 255, 255])
-count = 0
-left_diff = []
-right_diff = []
-slope_hist = []
+    Returns
+    -------
+    thresh : ndArray
+        Binary image after thresholding.
+
+    """
+   
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (7,7), 0)
+    ret,thresh = cv2.threshold(blur,160,255,cv2.THRESH_BINARY)             # Binary thresholding
+   
+    return thresh
+
+
+def region(frame):
+    """
+    Finds the desired region of interest in the image frame.
+
+    Parameters
+    ----------
+    frame : ndArray
+        Image frame.
+
+    Returns
+    -------
+    mask : ndArray
+        Frame with only the region of interest.
+
+    """
+    
+    height, width = frame.shape[:2]
+    trapezoid = np.array([[(220, height-50), (610,440), (725,440), (width - 150, height-50)]])
+    # cv2.line(frame,tuple(triangle[0][0]), tuple(triangle[0][1]),red,2)
+    # cv2.line(frame,tuple(triangle[0][0]), tuple(triangle[0][2]),red,2)
+    # cv2.line(frame,tuple(triangle[0][1]), tuple(triangle[0][2]),red,2)
+        
+    mask = np.zeros_like(frame)
+    mask = cv2.fillPoly(mask, trapezoid, (255,255,255))
+    mask = cv2.bitwise_and(frame, mask)
+    
+    return mask
+
+    
+def adjust_gamma(image, gamma=1.0):
+    """
+    Performs power law correction(gamma correction) on the given image
+
+    Parameters
+    ----------
+    image : ndArray
+        Input image.
+    gamma : float, optional
+        Gamma value(Values lesser than 1 make the image darker and greater than 1 make it brighter). The default is 1.0.
+
+    Returns
+    -------
+    ndArray
+        Gamma corrected image.
+
+    """
+	# build a lookup table mapping the pixel values [0, 255] to
+	# their adjusted gamma values
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255
+		for i in np.arange(0, 256)]).astype("uint8")
+	# apply gamma correction using the lookup table
+    
+    return cv2.LUT(image, table)
+
+
+def prepare_warped(frame):
+    """
+    Creates a  birds-eye view of the region of interest with lanes.
+
+    Parameters
+    ----------
+    frame : ndArray
+        Input video frame.
+
+    Returns
+    -------
+    result : ndArray
+        Image with birds-eye view of the lanes.
+    matrix : ndArray
+        Homography matrix.
+    lanes : ndArray
+        Detected lanes in original frame.
+
+    """
+    
+    hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+    v = hsv[:,:,2]    
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(20,20))
+    cl1 = clahe.apply(v)
+    hsv[:,:,2] = cl1
+    img_back = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    img_back = adjust_gamma(img_back, gamma = 0.5)
+
+    
+    modified = Modify_frame(img_back)
+    roi = region(modified)
+
+    lower = np.array([0,100,100])
+    upper = np.array([30,255,255])
+    
+    yellow_lane_roi = region(frame) 
+    yellow_lane_hsv = cv2.cvtColor(yellow_lane_roi, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(yellow_lane_hsv, lower, upper)
+
+    lanes = roi + mask
+    lanes = cv2.cvtColor(lanes, cv2.COLOR_GRAY2BGR)    
+
+    height, width, _ = frame.shape
+    pts1 = np.float32([[(220, height-50), (610,440), (725,440), (width - 150, height-50)]])
+    pts2 = np.float32([[0,400],[0,0],[200,0],[200,400]])
+    
+    matrix = cv2.getPerspectiveTransform(pts1, pts2)
+    warped = cv2.warpPerspective(roi, matrix, (200,400))
+    # warped = cv2.flip(warped,0)
+    yellow_lane_warped = cv2.warpPerspective(mask, matrix, (200,400))
+    warped[:,:100] = 0
+    result = warped + yellow_lane_warped
+    
+    return result, matrix, lanes
 
 
 def sliding_windown(img_w, out_img):
@@ -122,9 +381,9 @@ def sliding_windown(img_w, out_img):
     return left_fit, right_fit, out_img
 
 
-
 def draw_lane(left_fit, right_fit, out_img):
     
+    lane_superimposed = out_img.copy()
     ploty = np.linspace(0, out_img.shape[0] - 1, out_img.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
@@ -134,18 +393,18 @@ def draw_lane(left_fit, right_fit, out_img):
     verts_left = np.array(list(zip(left_fitx.astype(int), ploty.astype(int))))
     cv2.polylines(out_img, [verts_left], False, [0,0,255], 2)
     verts_right = np.array(list(zip(right_fitx.astype(int), ploty.astype(int))))
-    cv2.polylines(out_img, [verts_right], False, [0,0,255], 2)
+    cv2.polylines(out_img, [verts_right], False, [0,255,0], 2)
     # cv2.line(out_img,(int(left_fitx[0]),int(ploty[0])),(int(right_fitx[0]),int(ploty[0])),(255,0,0),2)
     # cv2.fillPoly(out_img, pts = np.int8([corners]), color = (0,0,255))
     
     pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
     pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
     pts = np.hstack((pts_left, pts_right))    
-    cv2.fillPoly(out_img, np.int32([pts]), color = (0,0,255,100))
+    cv2.fillPoly(lane_superimposed, np.int32([pts]), color = (0,0,255,100))
     
     avg_fit = (left_fitx + right_fitx) / 2
     avg_verts = np.array(list(zip(avg_fit.astype(int), ploty.astype(int))))
-    cv2.polylines(out_img, [avg_verts], False, [0,255,0],2)
+    cv2.polylines(out_img, [avg_verts], False, [255,200,68],2)
     
     # Arrows
     number_arrows = 10
@@ -158,11 +417,13 @@ def draw_lane(left_fit, right_fit, out_img):
     end_pts_t = [tuple(e) for e in end_pts]
     
     for i in range(number_arrows):     
-        cv2.arrowedLine(out_img, start_pts_t[i], end_pts_t[i], (255,0,0), 2, tipLength = 0.5)
-    return out_img
+        cv2.arrowedLine(out_img, start_pts_t[i], end_pts_t[i], (255,120,0), 2, tipLength = 0.5)
+        cv2.arrowedLine(lane_superimposed, start_pts_t[i], end_pts_t[i], (255,0,0), 2, tipLength = 0.5)
+    
+    return out_img, lane_superimposed
 
 
-def fit_from_lines(left_fit, right_fit, out_img):
+# def fit_from_lines(left_fit, right_fit, out_img):
     # Assume you now have a new warped binary image from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
     nonzero = out_img.nonzero()
@@ -203,6 +464,7 @@ def compare_fits(left_fit_prev, right_fit_prev, left_fit, right_fit, out_img):
     return left_diff_x, right_diff_x
 
 
+
 def get_curvature(left_fit, right_fit, img_shape):
     
     y_meters_per_pixel = 30 / 720
@@ -218,74 +480,13 @@ def get_curvature(left_fit, right_fit, img_shape):
                                                                                                                  
     slope = 2 * avg_fit[0] * y_img * y_meters_per_pixel + avg_fit[1]
     if (-0.1 < slope < 0):
-        turn = 'Slight Right'
+        turn = 'Go Straight'
     if (slope < -0.1):
-        turn = 'Right'
+        turn = ' Turn Right'
     
     
     return left_curvature, right_curvature, avg_curvature, turn, slope
 
 
 
-while(True): 
-    ret, frame = cam.read()                                                     # Reading the frame from video
-       
-    # Check if the frame exists, if not exit 
-    if not ret:
-        break
-    
-    # # roi = region(frame)
-    
-    
-    
-    comb, matrix = prepare_warped(frame)
 
-    # classified = classify(comb)
- 
-    out_img = cv2.cvtColor(comb, cv2.COLOR_GRAY2BGR)
-    
-    if (count == 0):
-        left_fit, right_fit, _ = sliding_windown(comb, out_img)
-    
-    left_fit_prev = left_fit
-    right_fit_prev = right_fit
-    
-    left_fit, right_fit, _ = sliding_windown(comb, out_img)
-    ld, rd = compare_fits(left_fit_prev, right_fit_prev,left_fit, right_fit, out_img)
-    left_diff.append(np.mean(ld))
-    right_diff.append(np.mean(rd))    
-    
-    if (np.mean(ld) > 25):
-        left_fit = left_fit_prev
-        right_fit = right_fit    
-    else:
-        left_fit = left_fit
-
-
-    if (np.mean(rd) > 4.5):
-        right_fit = right_fit_prev
-        left_fit = left_fit
-    else:
-        right_fit = right_fit
-    
-    
-    # left_fit, right_fit = fit_from_lines(left_fit, right_fit, comb)
-     
-    left_curvature, right_curvature, avg_curvature, turn, slope = get_curvature(left_fit, right_fit, frame.shape)
-    slope_hist.append(slope)
-    
-    lane_region = draw_lane(left_fit, right_fit, out_img)
- 
-    unwarp = cv2.warpPerspective(lane_region, np.linalg.inv(matrix), (frame.shape[1],frame.shape[0]))
-    result = cv2.bitwise_or(unwarp, frame)
-    
-    cv2.putText(result, 'Curvature - Left: {:.0f} m; Right: {:.0f} m; Center: {:.0f} m'.format(left_curvature,right_curvature,avg_curvature), (100,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-    cv2.putText(result, 'Turn: {}'.format(turn), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-    cv2.imshow('frame', result)
-    if cv2.waitKey(50) & 0xFF == ord('q'):
-        break
-    
-    count += 1
-    
-cam.release()
-cv2.destroyAllWindows()

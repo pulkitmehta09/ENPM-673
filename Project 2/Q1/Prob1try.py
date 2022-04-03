@@ -30,8 +30,8 @@ IMG_W = img.shape[1]
 # #     plt.xlim([0,256])
 # # plt.show()
 
-# hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-# v = hsv[:,:,2]
+hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+v = hsv[:,:,2]
 
 
 # # -----------------------------------
@@ -41,8 +41,8 @@ IMG_W = img.shape[1]
 # # v_eq = cv2.equalizeHist(v)
 
 # # ADAPTIVE
-# clahe = cv2.createCLAHE(clipLimit = 2.0, tileGridSize = (8,8))
-# v_eq = clahe.apply(v)
+clahe = cv2.createCLAHE(clipLimit = 2.0, tileGridSize = (8,8))
+v_eq = clahe.apply(v)
 # # ------------------------------------
 
 # v_eq = v

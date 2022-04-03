@@ -3,24 +3,39 @@
 """
 Created on Wed Mar 23 13:00:28 2022
 
-@author: pulkit
+ENPM 673
+Project 2 Question1
+
+@author: Pulkit Mehta
+UID: 117551693
 """
 
+# ---------------------------------------------------------------------------------
+# IMPORTING PACKAGES
+# ---------------------------------------------------------------------------------
 
+import cv2
+import glob
+from matplotlib import pyplot as plt
+from cv2 import VideoWriter, VideoWriter_fourcc 
 from HistEqUtils import *
 
-# Read the given images
-images = [cv2.imread(file) for file in glob.glob("adaptive_hist_data/*.png")]
 
-IMG_W = images[0].shape[1]
-IMG_H = images[0].shape[0]
-N = 2
-w = IMG_W // N
-h = IMG_H // N
+# ---------------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------------
 
+images = [cv2.imread(file) for file in glob.glob("adaptive_hist_data/*.png")]   # Read the given images
+
+IMG_W = images[0].shape[1]                                                      # Frame width        
+IMG_H = images[0].shape[0]                                                      # Frame height            
+N = 12                                                                          # Number of tiles across the width or height of the frame
+w = IMG_W // N                                                                  # Width of tile
+h = IMG_H // N                                                                  # Height of tile
 
 x = np.linspace(0,255,256)
 
+# Defining video writers
 FPS = 1                                                                       
 fourcc = VideoWriter_fourcc(*'mp4v')
 video = VideoWriter('./original.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
@@ -28,17 +43,21 @@ he_video = VideoWriter('./histogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
 ahe_video = VideoWriter('./adaptivehistogrameq.mp4', fourcc, float(FPS), (IMG_W, IMG_H))
 
 
-
+# Looping through the given images
 for i in range(len(images)):
+    
+    if(i==0):
+        print("performing histogram equalization...")
+    
     img = images[i]
-    video.write(img)
+    video.write(img)                                                            # Video of original frames
 
-    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)                                   # Converting to HSV space
     
     # Histogram equalization
-    hist = create_histogram(hsv)
-    cumsum = create_cumulative_sum(hist)
-    mapping = create_mapping(hist, cumsum, IMG_H, IMG_W)
+    hist = create_histogram(hsv)                                              
+    cumsum = create_cumulative_sum(hist)                                      
+    mapping = create_mapping(hist, cumsum, IMG_H, IMG_W)                        
     he_image_hsv = apply_mapping(hsv, mapping)
     he_image = cv2.cvtColor(he_image_hsv, cv2.COLOR_HSV2BGR_FULL)
     he_video.write(he_image)
@@ -56,23 +75,10 @@ for i in range(len(images)):
         
     ahe_image = cv2.cvtColor(ahe_image_hsv, cv2.COLOR_HSV2BGR_FULL)
     ahe_video.write(ahe_image)
-# cv2.imwrite('ahe_N2.png',ahe_image)
+
+
 video.release()    
 he_video.release()
 ahe_video.release()
 
-
-# # CLAHE
-
-# res_convimage = cv2.cvtColor(ahe_image, cv2.COLOR_BGR2HSV)
-# hist_res = make_histogram(res_convimage)
-# chist = clipping(hist_res)
-# ccumsum = make_cumsum(chist)
-# cmapping = make_mapping(chist, ccumsum, h, w)
-# capplied = apply_mapping(res_convimage, cmapping)
-# cimage = cv2.cvtColor(capplied, cv2.COLOR_HSV2BGR_FULL)
-
-# cv2.imshow('frame', cimage)
-# cv2.imshow('frame1', ahe_image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+print("Videos saved in the current working directory")

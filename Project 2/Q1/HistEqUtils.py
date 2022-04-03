@@ -3,15 +3,15 @@
 """
 Created on Fri Mar 25 13:37:04 2022
 
-@author: pulkit
+ENPM 673
+Project 2 Question1
+
+@author: Pulkit Mehta
+UID: 117551693
 """
 
-import cv2
+
 import numpy as np
-import imutils
-import glob
-from matplotlib import pyplot as plt
-from cv2 import VideoWriter, VideoWriter_fourcc 
 
 
 def create_histogram(img):
@@ -70,7 +70,7 @@ def create_mapping(histogram, cum_sum, h, w):
     ----------
     histogram : ndArray
         Array representing the histogram.
-    cum_sum : TYPE
+    cum_sum : ndArrray
         Array representing the cumulative sum of the histogram.
     h : int
         Image height.
@@ -94,7 +94,7 @@ def create_mapping(histogram, cum_sum, h, w):
 
 def apply_mapping(img, mapping):
     """
-    Apply the new brighntness levels to the original hsv image.
+    Apply the new brightness levels to the original hsv image.
 
     Parameters
     ----------
@@ -111,43 +111,7 @@ def apply_mapping(img, mapping):
     """
     new_image = img.copy()
     new_image[:,:,2] = list(map(lambda a : mapping[a], img[:,:,2]))
+   
     return new_image
 
 
-def adjust_gamma(image, gamma=1.0):
-
-	# build a lookup table mapping the pixel values [0, 255] to
-	# their adjusted gamma values
-    invGamma = 1.0 / gamma
-    table = np.array([((i / 255.0) ** invGamma) * 255
-		for i in np.arange(0, 256)]).astype("uint8")
-	# apply gamma correction using the lookup table
-    return cv2.LUT(image, table)
-
-
-def clipping(hist):
-    N = 256
-    beta = 3000
-    excess = 0
-    for i in range(N):
-        if(hist[i] > beta):
-            excess += hist[i] - beta
-            hist[i] = beta
-    
-    m = excess / N
-    for i in range(N):
-        if(hist[i] < beta - m):
-            hist[i] += m
-            excess -= m
-        elif(hist[i] < beta):
-            excess += hist[i] - beta
-            hist[i] = beta
-            
-    while (excess > 0):
-        for i in range(N):
-            if(excess > 0):
-                if(hist[i] < beta):
-                    hist[i] += 1
-                    excess -= 1
-    
-    return hist
