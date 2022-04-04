@@ -37,9 +37,7 @@ $ python3 Problem2.py
 ```
 The generated video "Problem2result.mp4" gets stored in the current folder,i.e., Problem2.
 
-
-https://user-images.githubusercontent.com/22097616/161586000-b79aea9b-7ef3-41d6-a495-3e7fd1742f81.mp4
-
+https://github.com/pulkitmehta09/ENPM-673/blob/main/Project%202/Problem2/Problem2result.mp4
 
 ----------------------------------------------------------
 Problem 3: Predict Turn
