@@ -45,7 +45,3 @@ $ cd Problem3
 $ python3 Problem3.py  
 ```
 The generated video "Problem3result.mp4" gets stored in the current folder,i.e., Problem3.
-
-
-![](https://user-images.githubusercontent.com/22097616/161587453-da9845b0-f578-4a77-b937-608465e5a483.gif)
-
