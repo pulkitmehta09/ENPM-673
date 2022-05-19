@@ -22,6 +22,6 @@ $ python3 highway1.py
 
 Similarly, change the file name for other datasets, which are: highway2, highway3 and custom. 
 
-<img src="https://github.com/pulkitmehta09/ENPM-673/blob/main/Project%204/images/highway1/result.png" width="128"/>
+<img src="https://github.com/pulkitmehta09/ENPM-673/blob/main/Project%204/images/highway1/result.png" width="1024"/>
 
 
