@@ -34,13 +34,7 @@ def warp(frame):
     return warped, matrix
 
 
-# video_file = "highway1.mp4"
-# video_file = "highway2.mp4"
 video_file = "highway3.mp4"
-# video_file = "highway4.mp4"
-# video_file = "highway5.mp4"
-
-
 
 measurement_region = [
     np.array([[ 10,  350], [ 10, 375], [ 46, 375], [ 46,  350]]),
@@ -59,6 +53,7 @@ lanemarkingpixel = 6.5
 pixelspermeter = lanemarkingpixel / 3.048
 fps = round(cap.get(cv2.CAP_PROP_FPS))
 print(f"FPS: {fps}")
+
 # params for ShiTomasi corner detection
 feature_params = dict( maxCorners = 100,
                        qualityLevel = 0.3,
@@ -79,14 +74,8 @@ warped_old_gray, _ = warp(old_gray)
 
 height, width = old_frame.shape[:2]
 
-# check corners
-# for i in p0:
-#     x, y = i.ravel()
-#     old_frame = cv2.circle(old_frame, (int(x), int(y)), 5, (0, 0, 255), -1)
-# cv2.imshow("old_frame",old_frame)
-# cv2.waitKey(0)
 
-# Create a mask image for drawing purposes
+# Create a mask image to put visual indicators
 warped_old_frame, _ = warp(old_frame)
 mask = np.zeros_like(warped_old_frame)
 
@@ -121,7 +110,6 @@ while(1):
     # recalculate good features
     if feature_refresh_counter % 20 == 0:
         p0 = cv2.goodFeaturesToTrack(warped_old_gray, mask=None, **feature_params)
-        # mask = np.zeros_like(old_frame)
 
 
     # calculate optical flow
@@ -132,7 +120,7 @@ while(1):
         good_new = p1[st==1]
         good_old = p0[st==1]
     
-    # draw the tracks
+    # calculate speed
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         a, b = new.ravel()
         c, d = old.ravel()
@@ -148,13 +136,7 @@ while(1):
         print("{:4} | {:4} | {:4} | {:4}"
           .format(lanespeed[0], lanespeed[1], lanespeed[2], lanespeed[3]))
         
-        
-        # mask = cv2.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
-        # mask = cv2.line(mask, (int(a), int(b)), (int(c), int(d)), (0,255,0), 2)
-        # warped = cv2.circle(warped, (int(a), int(b)), 5, (0,255,0), -1)
-        # warped = cv2.circle(warped, (int(c), int(d)), 5, (0,0,255), -1)
     img = cv2.add(warped, mask)
-    # img = frame
     cv2.imshow('frame', img)
 
     
@@ -172,8 +154,6 @@ while(1):
     result = cv2.add(unwarped_mask,frame)
 
     cv2.imshow('result', result)
-    # cv2.imshow('original', frame_copy)
-    # cv2.imshow('clahe', clahe_img)
     key = cv2.waitKey(fps)
     if key == ord("q"):
         break

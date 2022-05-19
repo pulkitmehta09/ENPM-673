@@ -8,7 +8,6 @@ def dist(x1, y1, x2, y2):
     return sqrt(pow(x1-x2, 2) + pow(y1-y2, 2))
 
 def get_speed(ox, oy, nx, ny, lane=0):
-    # print(f"measuring speed between {measurement_region[lane-1][0][1]} and {measurement_region[lane-1][1][1]}")
     if (oy > measurement_region[lane][0][1] and oy < measurement_region[lane][1][1] and 
         ox < measurement_region[lane][2][0] and ox > measurement_region[lane][1][0]):
         pixeldistance = dist(ox, oy, nx, ny)
@@ -34,12 +33,6 @@ def resetlanespeed():
         lanespeed[i] = 0
 
 video_file = "custom.mp4"
-# video_file = "highway2.mp4"
-# video_file = "highway3.mp4"
-# video_file = "highway4.mp4"
-# video_file = "highway5.mp4"
-
-
 
 measurement_region = [
     np.array([[0,  290], [0, 330], [80, 330], [80,  290]]),
@@ -75,14 +68,8 @@ warped_old_gray, _ = warp(old_gray)
 
 height, width = old_frame.shape[:2]
 
-# check corners
-# for i in p0:
-#     x, y = i.ravel()
-#     old_frame = cv2.circle(old_frame, (int(x), int(y)), 5, (0, 0, 255), -1)
-# cv2.imshow("old_frame",old_frame)
-# cv2.waitKey(0)
 
-# Create a mask image for drawing purposes
+# Create a mask image for visual indicators
 warped_old_frame, _ = warp(old_frame)
 mask = np.zeros_like(warped_old_frame)
 
@@ -110,9 +97,6 @@ while(1):
 
     # speed cam regions
     cv2.fillPoly(mask, [measurement_region[0]], (0,0,50))
-    # cv2.fillPoly(mask, [measurement_region[1]], (0,0,50))
-    # cv2.fillPoly(mask, [measurement_region[2]], (0,0,50))
-    
 
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     warped_frame_gray, _ = warp(frame_gray)
@@ -130,7 +114,7 @@ while(1):
         good_new = p1[st==1]
         good_old = p0[st==1]
     
-    # draw the tracks
+    # calculate speed
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         a, b = new.ravel()
         c, d = old.ravel()
@@ -145,17 +129,11 @@ while(1):
         print("{:4}"
           .format(lanespeed[0]))
 
-        # mask = cv2.line(mask, (int(a), int(b)), (int(c), int(d)), color[i].tolist(), 2)
-        # mask = cv2.line(mask, (int(a), int(b)), (int(c), int(d)), (0,255,0), 2)
-        # warped = cv2.circle(warped, (int(a), int(b)), 5, (0,255,0), -1)
-        # warped = cv2.circle(warped, (int(c), int(d)), 5, (0,0,255), -1)
     img = cv2.add(warped, mask)
     # img = frame
     cv2.imshow('img', img)
 
     cv2.putText(frame, 'Lane1: {:.0f} km/h'.format(lanespeed[0]), (575,650), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0,255,0), 2)    
-    # cv2.putText(frame, 'Lane2: {:.0f} km/h'.format(lanespeed[1]), (705,650), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0,255,0), 2)    
-    # cv2.putText(frame, 'Lane3: {:.0f} km/h'.format(lanespeed[2]), (975,650), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0,255,0), 2)    
 
     # cv2.imshow('frame', frame)
     unwarped_mask = cv2.warpPerspective(mask, np.linalg.inv(matrix), (frame.shape[1],frame.shape[0]))
@@ -163,8 +141,6 @@ while(1):
     result = cv2.add(unwarped_mask,frame)
 
     cv2.imshow('result', result)
-    # cv2.imshow('original', frame_copy)
-    # cv2.imshow('clahe', clahe_img)
 
     key = cv2.waitKey(fps)
     if key == ord("q"):
