@@ -1,8 +1,6 @@
-# ENPM-673 
-## Final Project
+# Optical Flow based speed Estimation
 
-## Author: Pulkit Mehta (UID: 117551693), Anirudh Krishnan Komaralingam(UID: 117446432), Shubham Takbhate(UID: 118359502)
-
+Uses the Lucas Kanade based sparse optical flow to estimate speed of vehicles in multiple lanes.
 Clone/Download the folder and run the below files in the terminal from the folder or in any IDE.
 
 ## Packages Required
